@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Raga Kosham: 72 melakartas, janya ragas, swara finder, graha bhedam, Katapayadi sankhya, veena and tanpura playback.">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Raga Kosham</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tiro+Tamil&family=Tiro+Devanagari+Sanskrit&family=Mukta:wght@400;500;600;700&family=Mukta+Malar:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+
+/* Layout: temple-ivory app. Wheel view (spinning melakarta wheel + side panel), raga view (two columns: scale on the left, lakshanam and relatives on the right), finder and index views. Single deliberate light look. */
+:root{
+  --bg:#F8F2E6; --paper:#FFFCF5; --card:#FFFFFF; --ink:#2A1812; --muted:#7A6152; --line:#E6D7BF; --line2:#D9C5A5;
+  --maroon:#7A1426; --maroon-d:#55101C; --maroon-soft:#F4E2E2; --gold:#B8862B; --gold-l:#E3B85C; --gold-soft:#F6EAD0; --green:#3C6B3A;
+  --f-display:"Tiro Tamil","Palatino Linotype",Georgia,serif;
+  --f-body:"Mukta","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;padding-block:0 60px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1380px;margin:0 auto;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.koorai{height:12px;background:conic-gradient(from 135deg at 50% 0,var(--maroon) 90deg,transparent 0) 0 0/16px 12px repeat-x,var(--gold)}
+
+/* Top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;padding-block:22px 10px}
+.logo{display:flex;align-items:baseline;gap:12px;background:none;border:0;padding:0}
+.logo b{font-family:var(--f-display);font-size:clamp(30px,3.6vw,40px);color:var(--maroon);font-weight:400;line-height:1}
+.logo span{font-family:var(--f-display);font-size:16px;color:var(--gold)}
+.navs{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.nav{border:1px solid var(--line2);background:var(--paper);border-radius:999px;padding:8px 16px;font-weight:600;font-size:14px;color:var(--maroon)}
+.nav:hover{border-color:var(--maroon)}
+.nav.on{background:var(--maroon);color:var(--paper);border-color:var(--maroon)}
+.ctl{display:flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--paper);border-radius:999px;padding:3px 4px 3px 14px}
+.ctl label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+.ctl select{background:transparent;border:0;color:var(--ink);font:inherit;font-weight:600;padding:6px 6px;border-radius:999px}
+.drone{border:1px solid var(--gold);background:var(--paper);color:var(--gold);border-radius:999px;padding:8px 16px;font-weight:700;font-size:14px}
+.drone.on{background:var(--gold);color:var(--paper);box-shadow:0 0 0 4px var(--gold-soft)}
+
+.label{font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--gold);font-weight:700}
+
+/* Search */
+.search{position:relative;margin:18px 0 8px}
+.search input{width:100%;background:var(--paper);border:1px solid var(--line2);border-radius:999px;padding:16px 22px 16px 50px;font:inherit;font-size:17px;color:var(--ink)}
+.search svg{position:absolute;left:20px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted)}
+.drop{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:6px;z-index:20;box-shadow:0 12px 34px rgba(80,30,10,.14);max-height:360px;overflow:auto}
+.drop button{display:flex;justify-content:space-between;gap:12px;width:100%;text-align:left;border:0;background:none;padding:9px 14px;border-radius:12px}
+.drop button:hover,.drop button.act{background:var(--maroon-soft)}
+.drop small{color:var(--muted);font-family:var(--f-mono);font-size:12px}
+
+/* Wheel view */
+.mapgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:36px;align-items:center;margin-top:8px}
+@media (max-width:960px){.mapgrid{grid-template-columns:minmax(0,1fr);gap:16px}}
+.wheelbox{max-width:680px;width:100%;margin:0 auto;position:relative;touch-action:none;user-select:none}
+svg.wheel{width:100%;height:auto;display:block;cursor:grab}
+svg.wheel.dragging{cursor:grabbing}
+.rot{transform-box:view-box;transform-origin:50% 50%;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+.rot.free{transition:none}
+.seg path{stroke:var(--paper);stroke-width:1.2}
+.seg text{font-family:var(--f-mono);font-size:11px;font-weight:600;pointer-events:none}
+.seg:hover path{filter:brightness(.93)}
+.seg.sel path{fill:var(--maroon)!important}
+.seg.sel text{fill:var(--gold-l)!important}
+.ckseg path{stroke:var(--paper);stroke-width:2.5}
+.ckseg text{font-family:var(--f-display);font-size:14px;fill:#FFF8EA;pointer-events:none;letter-spacing:.06em}
+.hub1{fill:var(--paper);stroke:var(--gold);stroke-width:2}
+.hub2{fill:none;stroke:var(--line2);stroke-width:1}
+.hubn{font-family:var(--f-display);font-size:58px;fill:var(--maroon)}
+.hubl{font-size:10px;font-weight:700;letter-spacing:.24em;fill:var(--muted);font-family:var(--f-body)}
+.pointer{fill:var(--maroon);stroke:var(--gold-l);stroke-width:2}
+.side .name{font-family:var(--f-display);font-size:clamp(40px,5vw,62px);color:var(--maroon);line-height:1.05;margin:10px 0 2px;background:none;border:0;padding:0;text-align:left;border-bottom:2px dotted var(--gold)}
+.side .dn{color:var(--muted);font-size:15px}
+.side .sw{font-family:var(--f-mono);font-size:16px;margin:16px 0;color:var(--ink)}
+.side .acts{display:flex;flex-wrap:wrap;gap:10px}
+.side p.hint{color:var(--muted);font-size:15px;margin-top:16px;max-width:42ch}
+.btn{border:1px solid var(--maroon);background:var(--maroon);color:var(--paper);border-radius:999px;padding:11px 22px;font-weight:700;font-size:15px}
+.btn:hover{background:var(--maroon-d)}
+.btn.ghost{background:var(--paper);color:var(--maroon)}
+.btn.ghost:hover{background:var(--maroon-soft)}
+.intro{color:var(--muted);font-size:15px;margin-top:26px;border-top:1px solid var(--line);padding-top:16px;max-width:110ch}
+
+/* Raga view */
+.ragagrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:34px;align-items:start;margin-top:14px}
+@media (max-width:960px){.ragagrid{grid-template-columns:minmax(0,1fr)}}
+.col{min-width:0;display:flex;flex-direction:column;gap:18px}
+.crumbs{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.back{background:none;border:0;padding:0;color:var(--maroon);font-weight:600;border-bottom:1px dotted var(--maroon)}
+.rtitle{display:flex;align-items:flex-start;gap:12px}
+.rtitle sup{font-family:var(--f-mono);font-size:20px;color:var(--gold);margin-top:16px}
+.rtitle h1{font-family:var(--f-display);font-weight:400;font-size:clamp(46px,6vw,76px);line-height:1;margin:0;color:var(--maroon);text-wrap:balance}
+.rsub{color:var(--muted);margin-top:-6px}
+.rsub .chip{vertical-align:baseline}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.trio{grid-template-columns:minmax(0,1fr)}}
+.tcard{border:1px dashed var(--line2);border-radius:16px;padding:12px 14px;background:var(--paper)}
+.tcard.main{border:1.5px solid var(--maroon);background:var(--maroon-soft)}
+.tcard .k{font-size:11px;text-transform:uppercase;letter-spacing:.16em;font-weight:700;color:var(--muted)}
+.tcard.main .k{color:var(--maroon)}
+.tcard .v{font-family:var(--f-display);font-size:22px;line-height:1.2;margin-top:4px}
+.tcard .s{font-size:13px;color:var(--muted)}
+.tcard.none .v{color:var(--muted)}
+
+.bars{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:6px}
+.bar{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0}
+.bar i{display:block;width:100%;height:150px;border-radius:12px;background:var(--paper);border:1px solid var(--line2);position:relative;transition:transform .12s, box-shadow .2s}
+.bar.on i{background:linear-gradient(180deg,#9A2236,var(--maroon) 60%,var(--maroon-d));border-color:var(--maroon)}
+.bar.on i::before{content:"";position:absolute;top:8px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--gold-l)}
+.bar.anya i{background:linear-gradient(180deg,var(--gold-l),var(--gold));border-color:var(--gold)}
+.bar.ring i{transform:translateY(-8px);box-shadow:0 8px 0 -3px var(--gold-l),0 0 0 3px var(--gold-soft)}
+.bar .st{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.bar.on .st{color:#F3D9A4}.bar.anya .st{color:var(--paper)}
+.bar b{font-family:var(--f-mono);font-size:13px;font-weight:600;color:var(--maroon);min-height:18px;line-height:1.1;text-align:center}
+.bar small{font-family:var(--f-mono);font-size:10px;color:var(--muted);line-height:1;min-height:10px}
+.bar:not(.on):not(.anya) b{color:var(--muted);font-weight:400;font-size:10px}
+@media (max-width:520px){.bar i{height:100px}.bars{gap:3px}.bar b{font-size:10px}}
+.hear{width:100%;padding:16px;border-radius:999px;border:0;background:var(--maroon);color:var(--paper);font-weight:700;font-size:18px;box-shadow:0 0 0 4px var(--gold-soft),0 0 0 5px var(--gold)}
+.hear:hover{background:var(--maroon-d)}
+.hear.playing{background:var(--gold);color:var(--paper)}
+.prow{display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line2);border-radius:18px;padding:9px 16px 9px 9px}
+.pb{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--maroon);color:var(--gold-l);display:grid;place-items:center;font-size:13px}
+.pb:hover,.pb.playing{background:var(--gold);color:var(--paper)}
+.prow .dir{color:var(--gold);font-weight:700}
+.prow .sq{font-family:var(--f-mono);font-size:16px;font-weight:500;overflow-wrap:anywhere;min-width:0}
+
+.card{background:var(--card);border:1px solid var(--line2);border-radius:22px;padding:22px 24px;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:linear-gradient(90deg,var(--maroon),var(--gold),var(--maroon))}
+.card h3{margin:2px 0 12px}
+.card .lead{color:var(--muted);font-size:15px;margin:-4px 0 12px}
+.facts{display:grid;grid-template-columns:170px minmax(0,1fr);margin:0;font-size:15px}
+.facts dt,.facts dd{padding:8px 0;border-bottom:1px solid var(--line);margin:0}
+.facts dt{color:var(--muted)}
+@media (max-width:460px){.facts{grid-template-columns:minmax(0,1fr)}.facts dt{border-bottom:0;padding-bottom:0}}
+.note{background:var(--gold-soft);border-radius:12px;padding:11px 14px;font-size:15px;margin-top:12px}
+.note b{color:var(--maroon)}
+table.sw{width:100%;border-collapse:collapse;font-size:15px}
+table.sw td{padding:7px 0;border-bottom:1px solid var(--line)}
+table.sw td:first-child{font-family:var(--f-mono);font-weight:600;width:60px;color:var(--maroon)}
+table.sw td:last-child{color:var(--muted);text-align:right;font-family:var(--f-mono);font-size:12px}
+.chip{border:1px solid var(--line2);background:var(--paper);border-radius:999px;padding:4px 12px;font-size:14px;display:inline-flex;gap:7px;align-items:baseline}
+.chip:hover{border-color:var(--maroon);color:var(--maroon)}
+.chip small{color:var(--muted);font-family:var(--f-mono);font-size:11px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:12px;padding:3px 11px;border-radius:999px;background:var(--gold-soft);color:var(--gold);font-weight:700}
+.tag.m{background:var(--maroon-soft);color:var(--maroon)}
+.tag.g{background:#E3EEDF;color:var(--green)}
+
+.rel{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:16px;padding:9px 14px 9px 9px;margin-bottom:8px;background:var(--paper)}
+.rel .pb{width:38px;height:38px}
+.rel .txt{min-width:0;flex:1}
+.rel .nm{background:none;border:0;padding:0;font-family:var(--f-display);font-size:21px;color:var(--maroon);border-bottom:1px dotted var(--gold);line-height:1.2;text-align:left}
+.rel .why{font-size:14px;color:var(--muted)}
+.rel .no{font-family:var(--f-mono);font-size:12px;color:var(--muted);flex:none}
+.more{background:none;border:0;color:var(--maroon);font-weight:600;padding:4px 0;border-bottom:1px dotted var(--maroon)}
+.songs{list-style:none;padding:0;margin:0}
+.songs li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.songs li span:first-child{font-family:var(--f-display);font-size:19px}
+.songs li span:last-child{color:var(--muted);text-align:right}
+.empty{color:var(--muted);font-style:italic;margin:0}
+.pal{display:flex;flex-wrap:wrap;gap:10px 14px}
+.pg{display:flex;gap:4px}
+.pt{font-family:var(--f-mono);font-size:13px;font-weight:600;min-width:44px;padding:8px 6px;border:1px solid var(--line2);border-radius:10px;background:var(--paper);color:var(--maroon)}
+.pt:hover{border-color:var(--maroon)}
+.pt.on{background:var(--maroon);color:var(--paper);border-color:var(--maroon)}
+.pt.add{background:var(--green);color:var(--paper);border-color:var(--green)}
+.pt.fixed{cursor:default}
+.diff{font-family:var(--f-mono);font-size:15px;margin:12px 0 0}
+.diff .minus{color:var(--maroon);text-decoration:line-through}
+.diff .plus{color:var(--green);font-weight:600}
+h4.sub{font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:var(--gold);margin:18px 0 8px;font-weight:700}
+
+/* Finder / index */
+.pagehead h1{font-family:var(--f-display);font-weight:400;color:var(--maroon);font-size:clamp(36px,4.6vw,54px);margin:10px 0 4px;line-height:1.05}
+.pagehead p{color:var(--muted);max-width:66ch;margin:0 0 16px}
+.finder-in{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.finder-in input{flex:1;min-width:220px;background:var(--paper);border:1px solid var(--line2);border-radius:999px;padding:13px 20px;font-family:var(--f-mono);font-size:16px;color:var(--ink)}
+.err{color:var(--maroon);font-size:14px;min-height:1.3em}
+.ex{display:flex;flex-wrap:wrap;gap:6px;font-size:14px;color:var(--muted);align-items:center;margin-top:12px}
+.ex button{border:1px dashed var(--line2);background:var(--paper);border-radius:999px;padding:4px 12px;font-family:var(--f-mono);font-size:12px;color:var(--maroon)}
+.twocol{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:960px){.twocol{grid-template-columns:minmax(0,1fr)}}
+.idx-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.idx-tools input{flex:1;min-width:200px;background:var(--paper);border:1px solid var(--line2);border-radius:999px;padding:12px 18px;font:inherit}
+.idx-tools select{background:var(--paper);border:1px solid var(--line2);border-radius:999px;padding:10px 14px;font:inherit}
+.count{font-size:14px;color:var(--muted);margin-bottom:8px}
+.grid-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);max-width:100ch}
+@media (prefers-reduced-motion:reduce){.rot{transition:none}.bar i{transition:none}.bar.ring i{transform:none}}
+
+:root{--f-display:"Tiro Tamil","Tiro Devanagari Sanskrit","Palatino Linotype",Georgia,serif;--f-body:"Mukta","Mukta Malar","Segoe UI",system-ui,sans-serif}
+.lang select{font-weight:700}
+/* fixed wheel + rotating needle */
+svg.wheel{cursor:pointer}
+.needle{transform-box:view-box;transform-origin:50% 50%;transition:transform .55s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.needle.free{transition:none}
+.needle .shaft{fill:var(--gold-l);stroke:var(--maroon);stroke-width:1.5}
+.needle .tip{fill:var(--maroon);stroke:var(--gold-l);stroke-width:2}
+.needle .jewel{fill:var(--maroon);stroke:var(--gold-l);stroke-width:2}
+.seg.hov path{filter:brightness(.88)}
+.hubname{font-family:var(--f-display);font-size:16px;fill:var(--ink)}
+.hubck{font-size:9.5px;font-weight:700;letter-spacing:.2em;fill:var(--gold);font-family:var(--f-body)}
+/* graha + katapayadi */
+.gr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;border:1px solid var(--line);border-radius:16px;padding:9px 14px 9px 9px;margin-bottom:8px;background:var(--paper)}
+.gr .pb{width:38px;height:38px}
+.gr .from{font-family:var(--f-mono);font-weight:600;color:var(--gold);font-size:14px}
+.gr .seq{font-family:var(--f-mono);font-size:14px;overflow-wrap:anywhere}
+.gr .res{font-size:14px;color:var(--muted)}
+.gr .res .nm{background:none;border:0;padding:0;font-family:var(--f-display);font-size:19px;color:var(--maroon);border-bottom:1px dotted var(--gold)}
+.kata{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:6px 0 12px}
+.ktile{border:1.5px solid var(--maroon);border-radius:14px;padding:10px 16px;text-align:center;min-width:92px;background:var(--maroon-soft)}
+.ktile .sy{font-family:var(--f-display);font-size:28px;color:var(--maroon);line-height:1.1}
+.ktile .cn{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.ktile .dg{font-family:var(--f-display);font-size:30px;color:var(--gold);line-height:1}
+.kop{font-family:var(--f-display);font-size:26px;color:var(--muted)}
+.kres{border-radius:14px;padding:10px 18px;background:var(--maroon);color:var(--paper);text-align:center}
+.kres .dg{font-family:var(--f-display);font-size:38px;line-height:1;color:var(--gold-l)}
+.kres .cn{font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+details.key{margin-top:10px}
+details.key summary{cursor:pointer;color:var(--maroon);font-weight:600}
+table.ktab{border-collapse:collapse;font-size:14px;margin-top:8px;width:100%}
+table.ktab th,table.ktab td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left}
+table.ktab th{font-family:var(--f-display);color:var(--maroon);font-size:18px;width:40px}
+table.ktab td{font-family:var(--f-mono);font-size:13px}
+.ktab-wrap{overflow-x:auto}
+.rtitle .en{display:block;font-family:var(--f-body);font-size:16px;color:var(--muted);margin-top:6px}
+</style>
+
+</head>
+<body>
+<div class="koorai"></div>
+<div class="wrap">
+  <div class="top">
+    <button class="logo" data-go="wheel" aria-label="Raga Kosham home"><b>Raga Kosham</b><span>ராக கோசம் · राग कोश</span></button>
+    <div class="navs">
+      <button class="nav" data-go="wheel" data-i18n="wheel">Wheel</button>
+      <button class="nav" data-go="finder" data-i18n="finder">Swara finder</button>
+      <button class="nav" data-go="ragas" data-i18n="ragas">All ragas</button>
+      <div class="ctl lang"><label for="langSel" data-i18n="lang">Language</label><select id="langSel"><option value="en">English</option><option value="sa">संस्कृतम्</option><option value="ta">தமிழ்</option></select></div>
+      <div class="ctl"><label for="shruti">Sa</label><select id="shruti"></select></div>
+      <div class="ctl"><label for="tempo" data-i18n="kalam">Kalam</label><select id="tempo"><option value="0.62">Vilamba</option><option value="0.44" selected>Madhya</option><option value="0.3">Druta</option></select></div>
+      <button class="drone" id="droneBtn" aria-pressed="false" data-i18n="tanpura">Tanpura</button>
+    </div>
+  </div>
+
+  <section id="v-wheel">
+    <div class="label" data-i18n="find">Find</div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="q" autocomplete="off" aria-label="Search ragas">
+      <div class="drop" id="drop" hidden></div>
+    </div>
+    <div class="mapgrid">
+      <div class="wheelbox" id="wheelbox"></div>
+      <div class="side" id="side"></div>
+    </div>
+    <p class="intro">Carnatic music files every seven-note scale under one of 72 parent ragas, the melakartas, arranged in 12 chakras of six. The first 36 use shuddha madhyamam (M1); the last 36 use prati madhyamam (M2). Every janya raga in this library hangs from one of them.</p>
+  </section>
+
+  <section id="v-raga" hidden></section>
+
+  <section id="v-finder" hidden>
+    <div class="pagehead"><div class="label" data-i18n="finder">Swara finder</div><h1 data-i18n="finderH">Which raga is this?</h1><p>Type swaras or tap them. You get ragas with exactly these swaras, the melakartas that contain them, and ragas one note away. R2 and G1 count as the same pitch.</p></div>
+    <div class="twocol">
+      <div class="card">
+        <div class="finder-in"><input type="text" id="finderText" placeholder="S R2 G3 P D2" autocomplete="off" spellcheck="false" aria-label="Swaras"><button class="btn" id="finderPlay" data-i18n="play">▶ Play</button><button class="btn ghost" id="finderClear">Clear</button></div>
+        <div class="err" id="finderErr"></div>
+        <div id="finderPal"></div>
+        <div class="ex">Try:
+          <button data-ex="S R2 G3 P D2">S R2 G3 P D2</button><button data-ex="S G2 M1 D1 N2">S G2 M1 D1 N2</button><button data-ex="S R2 M1 P N2">S R2 M1 P N2</button><button data-ex="S R1 G3 M2 P D1 N3">S R1 G3 M2 P D1 N3</button>
+        </div>
+      </div>
+      <div id="finderRes"></div>
+    </div>
+  </section>
+
+  <section id="v-ragas" hidden>
+    <div class="pagehead"><div class="label" data-i18n="library">Library</div><h1 data-i18n="ragasH">All ragas</h1><p>Every melakarta and janya in the library. Search by name, Dikshitar name, mela number or swaras.</p></div>
+    <div class="idx-tools"><input type="search" id="idxQ" placeholder="Mohanam, Kalyani, 28, D2…" aria-label="Search ragas">
+      <select id="idxKind" aria-label="Filter"><option value="all">All</option><option value="mela">Melakartas</option><option value="janya">Janyas</option><option value="songs">With songs</option></select></div>
+    <div class="count" id="idxCount"></div>
+    <div class="grid-list" id="idxList"></div>
+  </section>
+
+  <footer>Notation: S, R1–R3, G1–G3, M1–M2, P, D1–D3, N1–N3; R2 = G1, R3 = G2, D2 = N1, D3 = N2 share a pitch. Melakarta swaras follow the Venkatamakhi scheme; Katapayadi syllables are checked against the standard digit key. Sanskrit and Tamil spellings are generated from transliteration and should be proofread. Janya scales, lakshanam notes and songs are a starter set to be verified. Veena and tanpura are synthesised in your browser.</footer>
+</div>
+
+<script>
+(function(){
+const POS={S:0,R1:1,R2:2,R3:3,G1:2,G2:3,G3:4,M1:5,M2:6,P:7,D1:8,D2:9,D3:10,N1:9,N2:10,N3:11};
+const LORD='SRGMPDN';
+const FULL={S:'Shadjam',R1:'Shuddha Rishabham',R2:'Chatushruti Rishabham',R3:'Shatshruti Rishabham',G1:'Shuddha Gandharam',G2:'Sadharana Gandharam',G3:'Antara Gandharam',M1:'Shuddha Madhyamam',M2:'Prati Madhyamam',P:'Panchamam',D1:'Shuddha Dhaivatam',D2:'Chatushruti Dhaivatam',D3:'Shatshruti Dhaivatam',N1:'Shuddha Nishadam',N2:'Kaishiki Nishadam',N3:'Kakali Nishadam'};
+const STRIP=[['S'],['R1'],['R2','G1'],['R3','G2'],['G3'],['M1'],['M2'],['P'],['D1'],['D2','N1'],['D3','N2'],['N3']];
+const RG=[['R1','G1'],['R1','G2'],['R1','G3'],['R2','G2'],['R2','G3'],['R3','G3']];
+const DN=[['D1','N1'],['D1','N2'],['D1','N3'],['D2','N2'],['D2','N3'],['D3','N3']];
+const CHAKRAS=['Indu','Netra','Agni','Veda','Bana','Rutu','Rishi','Vasu','Brahma','Disi','Rudra','Aditya'];
+const NAMES=['Kanakangi','Ratnangi','Ganamurti','Vanaspati','Manavati','Tanarupi','Senavati','Hanumatodi','Dhenuka','Natakapriya','Kokilapriya','Rupavati','Gayakapriya','Vakulabharanam','Mayamalavagowla','Chakravakam','Suryakantam','Hatakambari','Jhankaradhwani','Natabhairavi','Keeravani','Kharaharapriya','Gourimanohari','Varunapriya','Mararanjani','Charukesi','Sarasangi','Harikambhoji','Dheerashankarabharanam','Naganandini','Yagapriya','Ragavardhini','Gangeyabhushani','Vagadheeswari','Shulini','Chalanata','Salagam','Jalarnavam','Jhalavarali','Navaneetam','Pavani','Raghupriya','Gavambodhi','Bhavapriya','Shubhapantuvarali','Shadvidamargini','Suvarnangi','Divyamani','Dhavalambari','Namanarayani','Kamavardhini','Ramapriya','Gamanashrama','Vishwambari','Shamalangi','Shanmukhapriya','Simhendramadhyamam','Hemavati','Dharmavati','Neetimati','Kantamani','Rishabhapriya','Latangi','Vachaspati','Mechakalyani','Chitrambari','Sucharitra','Jyotiswarupini','Dhatuvardhani','Nasikabhushani','Kosalam','Rasikapriya'];
+const DNAMES=['Kanakambari','Phenadyuti','Ganasamavarali','Bhanumati','Manoranjani','Tanukirti','Senagrani','Janatodi','Dhunibhinnashadjam','Natabharanam','Kokilaravam','Rupavati','Geyahejjajji','Vativasantabhairavi','Mayamalavagaula','Toyavegavahini','Chayavati','Jayashuddhamalavi','Jhankarabhramari','Narireetigaula','Kiranavali','Sriraga','Gaurivelavali','Viravasantam','Sharavati','Tarangini','Saurasena','Harikedaragaula','Shankarabharanam','Nagabharanam','Kalavati','Ragachudamani','Gangatarangini','Bhogachayanata','Shailadeshakshi','Chalanata','Saugandhini','Jaganmohanam','Dhalivarali','Nabhomani','Kumbhini','Ravikriya','Girvani','Bhavani','Shivapantuvarali','Stavarajam','Sauviram','Jivantika','Dhavalangam','Namadeshi','Kashiramakriya','Ramamanohari','Gamakakriya','Vamshavati','Shyamalam','Chamaram','Sumadyuti','Deshisimharavam','Dhamavati','Nishadham','Kuntalam','Ratipriya','Gitapriya','Bhushavati','Shantakalyani','Chaturangini','Santanamanjari','Jyotiraga','Dhautapanchamam','Nasamani','Kusumakaram','Rasamanjari'];
+const ALIAS={8:['Todi'],15:['Mayamalavagaula'],29:['Shankarabharanam'],45:['Shubhapantuvarali'],51:['Pantuvarali'],65:['Kalyani']};
+const WEST={8:'Phrygian mode',14:'Phrygian dominant',15:'Double harmonic major',20:'Natural minor (Aeolian)',21:'Harmonic minor',22:'Dorian mode',23:'Melodic minor (ascending)',26:'Mixolydian ♭6',28:'Mixolydian mode',29:'Major scale (Ionian)',57:'Hungarian minor',64:'Lydian dominant',65:'Lydian mode'};
+const THAAT={8:'Bhairavi',15:'Bhairav',20:'Asavari',22:'Kafi',28:'Khamaj',29:'Bilawal',45:'Todi',51:'Purvi',53:'Marwa',65:'Kalyan'};
+const NOTES={
+ 15:'Traditionally the first raga taught: sarali varisai, janta and alankarams are learnt in it. R1 and D1 are sung with oscillation; the raga suits devotional and introspective moods.',
+ 8:'A heavy gamaka raga; G2 and D1 carry deep oscillations. Considered one of the most demanding ragas for alapana and a staple for ragam-tanam-pallavi.',
+ 20:'Parent of the Bhairavi family of ragas, though Bhairavi itself uses an anya swara.',
+ 21:'Popular in both concert and film music; its N3 against G2 gives the raga its pull.',
+ 22:'One of the richest parents of janya ragas. Allows long, expansive alapana with gamakas on G2 and N2.',
+ 28:'Parent of many popular janyas such as Kambhoji, Mohanam and Kedaragowla.',
+ 29:'A major raga for ragam-tanam-pallavi and the parent of Bilahari, Hamsadhwani and Arabhi.',
+ 65:'The most widely sung prati madhyama raga. Customarily associated with evening concerts and auspicious occasions.',
+ 26:'Popularised by Tyagaraja\'s "Adamodi Galade".',
+ 36:'Uses R3 and D3, so it is a vivadi mela; Nata is its best-known janya.',
+ 56:'A brisk raga well suited to fast swara and tanam passages.',
+ 57:'A sought-after raga for ragam-tanam-pallavi.',
+ 51:'Also called Pantuvarali; sung widely in Tyagaraja kritis.'
+};
+
+// Janya library: name | parent mela | arohanam | avarohanam | v = vakra
+const JDATA=`Malahari|15|S R1 M1 P D1 S|S D1 P M1 G3 R1 S|
+Saveri|15|S R1 M1 P D1 S|S N3 D1 P M1 G3 R1 S|
+Bowli|15|S R1 G3 P D1 S|S N3 D1 P G3 R1 S|
+Revagupti|15|S R1 G3 P D1 S|S D1 P G3 R1 S|
+Gowla|15|S R1 M1 P N3 S|S N3 P M1 R1 G3 M1 R1 S|v
+Lalitha|15|S R1 G3 M1 D1 N3 S|S N3 D1 M1 G3 R1 S|
+Jaganmohini|15|S G3 M1 P N3 S|S N3 P M1 G3 R1 S|
+Gowri|15|S R1 M1 P N3 S|S N3 D1 P M1 G3 R1 S|
+Nadanamakriya|15|N3 S R1 G3 M1 P D1 N3|N3 D1 P M1 G3 R1 S N3|
+Dhanyasi|8|S G2 M1 P N2 S|S N2 D1 P M1 G2 R1 S|
+Punnagavarali|8|N2 S R1 G2 M1 P D1 N2|N2 D1 P M1 G2 R1 S N2|
+Bhupalam|8|S R1 G2 P D1 S|S D1 P G2 R1 S|
+Asaveri|8|S R1 M1 P D1 S|S N2 S P D1 M1 P R1 G2 R1 S|v
+Shuddha Seemantini|8|S R1 G2 M1 P D1 S|S D1 P M1 G2 R1 S|
+Revati|2|S R1 M1 P N2 S|S N2 P M1 R1 S|
+Malayamarutham|16|S R1 G3 P D2 N2 S|S N2 D2 P G3 R1 S|
+Vasanta|17|S M1 G3 M1 D2 N3 S|S N3 D2 M1 G3 R1 S|v
+Hindolam|20|S G2 M1 D1 N2 S|S N2 D1 M1 G2 S|
+Jayanthasri|20|S G2 M1 D1 N2 S|S N2 D1 M1 P M1 G2 S|v
+Saramati|20|S R2 G2 M1 P D1 N2 S|S N2 D1 M1 G2 S|
+Jonpuri|20|S R2 M1 P D1 N2 S|S N2 D1 P M1 G2 R2 S|
+Bhairavi|20|S G2 R2 G2 M1 P D2 N2 S|S N2 D1 P M1 G2 R2 S|v
+Anandabhairavi|20|S G2 R2 G2 M1 P D2 P S|S N2 D2 P M1 G2 R2 S|v
+Kalyanavasantam|21|S G2 M1 D1 N3 S|S N3 D1 P M1 G2 R2 S|
+Abheri|22|S G2 M1 P N2 S|S N2 D2 P M1 G2 R2 S|
+Shuddha Dhanyasi|22|S G2 M1 P N2 S|S N2 P M1 G2 S|
+Sriranjani|22|S R2 G2 M1 D2 N2 S|S N2 D2 M1 G2 R2 S|
+Madhyamavati|22|S R2 M1 P N2 S|S N2 P M1 R2 S|
+Sri|22|S R2 M1 P N2 S|S N2 P M1 R2 G2 R2 S|v
+Mukhari|22|S R2 M1 P N2 D2 S|S N2 D1 P M1 G2 R2 S|v
+Kanada|22|S R2 G2 M1 D2 N2 S|S N2 P M1 G2 M1 R2 S|v
+Darbar|22|S R2 M1 P D2 N2 S|S N2 D2 P M1 R2 G2 G2 R2 S|v
+Bageshri|22|S G2 M1 D2 N2 S|S N2 D2 M1 P M1 G2 R2 S|v
+Brindavana Saranga|22|S R2 M1 P N3 S|S N2 P M1 R2 G2 R2 S|v
+Kapi|22|S R2 M1 P N3 S|S N2 D2 N2 P M1 G2 R2 S|v
+Abhogi|22|S R2 G2 M1 D2 S|S D2 M1 G2 R2 S|
+Shivaranjani|22|S R2 G2 P D2 S|S D2 P G2 R2 S|
+Huseni|22|S R2 G2 M1 P N2 D2 N2 S|S N2 D2 P M1 G2 R2 S|v
+Devamanohari|22|S R2 M1 P D2 N2 S|S N2 D2 N2 P M1 R2 S|v
+Manirangu|22|S R2 M1 P N2 S|S N2 P M1 G2 R2 S|
+Ritigowla|22|S G2 R2 G2 M1 N2 D2 M1 N2 N2 S|S N2 D2 M1 G2 M1 P M1 G2 R2 S|v
+Andolika|22|S R2 M1 P N2 S|S N2 D2 M1 R2 S|
+Jayamanohari|22|S R2 G2 M1 D2 S|S N2 D2 M1 G2 R2 S|
+Nayaki|22|S R2 M1 P D2 N2 D2 P S|S N2 D2 P M1 R2 G2 R2 S|v
+Mohanam|28|S R2 G3 P D2 S|S D2 P G3 R2 S|
+Kambhoji|28|S R2 G3 M1 P D2 S|S N2 D2 P M1 G3 R2 S|
+Kedaragowla|28|S R2 M1 P N2 S|S N2 D2 P M1 G3 R2 S|
+Yadukula Kambhoji|28|S R2 M1 P D2 S|S N2 D2 P M1 G3 R2 S|
+Sahana|28|S R2 G3 M1 P M1 D2 N2 S|S N2 S D2 N2 D2 P M1 G3 M1 R2 G3 R2 S|v
+Natakurinji|28|S R2 G3 M1 N2 D2 N2 P D2 N2 S|S N2 D2 M1 G3 S|v
+Kamas|28|S M1 G3 M1 P D2 N2 S|S N2 D2 P M1 G3 R2 S|v
+Surati|28|S R2 M1 P N2 S|S N2 D2 P M1 G3 P M1 R2 S|v
+Bahudari|28|S G3 M1 P D2 N2 S|S N2 P M1 G3 S|
+Kuntalavarali|28|S M1 P D2 N2 D2 S|S N2 D2 P M1 S|v
+Pratapavarali|28|S R2 M1 P D2 S|S D2 P M1 G3 R2 S|
+Valaji|28|S G3 P D2 N2 S|S N2 D2 P G3 S|
+Nagaswaravali|28|S G3 M1 P D2 S|S D2 P M1 G3 S|
+Bilahari|29|S R2 G3 P D2 S|S N3 D2 P M1 G3 R2 S|
+Hamsadhwani|29|S R2 G3 P N3 S|S N3 P G3 R2 S|
+Arabhi|29|S R2 M1 P D2 S|S N3 D2 P M1 G3 R2 S|
+Devagandhari|29|S R2 M1 P D2 S|S N3 D2 P M1 G3 R2 S|
+Shuddha Saveri|29|S R2 M1 P D2 S|S D2 P M1 R2 S|
+Kedaram|29|S M1 G3 M1 P N3 S|S N3 P M1 G3 R2 S|v
+Begada|29|S G3 R2 G3 M1 P D2 P S|S N3 D2 P M1 G3 R2 S|v
+Atana|29|S R2 M1 P N3 S|S N3 D2 P M1 P G3 R2 S|v
+Poornachandrika|29|S R2 G3 M1 P D2 P S|S N3 P M1 R2 G3 M1 R2 S|v
+Janaranjani|29|S R2 G3 M1 P D2 P N3 S|S D2 P M1 R2 S|v
+Kurinji|29|N3 S R2 G3 M1 P D2|D2 P M1 G3 R2 S N3 S|
+Neelambari|29|S R2 G3 M1 P D2 P S|S N3 P M1 G3 R2 G3 S|v
+Garudadhwani|29|S R2 G3 M1 P D2 N3 S|S D2 P G3 R2 S|
+Sama|29|S R2 M1 P D2 S|S D2 P M1 G3 R2 S|
+Kathanakuthuhalam|29|S R2 M1 D2 N3 G3 P S|S N3 D2 P M1 G3 R2 S|v
+Behag|29|S G3 M1 P N3 S|S N3 D2 P M2 G3 M1 G3 R2 S|v
+Mand|29|S G3 M1 P D2 S|S N3 D2 P M1 G3 R2 S|
+Nata|36|S R3 G3 M1 P D3 N3 S|S N3 P M1 R3 S|
+Gambhiranata|36|S G3 M1 P N3 S|S N3 P M1 G3 S|
+Varali|39|S G1 R1 G1 M2 P D1 N3 S|S N3 D1 P M2 G1 R1 S|v
+Purvikalyani|53|S R1 G3 M2 P D2 P S|S N3 D2 P M2 G3 R1 S|v
+Hamsanandi|53|S R1 G3 M2 D2 N3 S|S N3 D2 M2 G3 R1 S|
+Madhuvanti|59|S G2 M2 P N3 S|S N3 D2 P M2 G2 R2 S|
+Ranjani|59|S R2 G2 M2 D2 S|S N3 D2 M2 G2 S R2 G2 S|v
+Hamsanadam|60|S R2 M2 P D3 N3 S|S N3 D3 P M2 R2 S|
+Saraswati|64|S R2 M2 P D2 S|S N2 D2 P M2 R2 S|
+Mohanakalyani|65|S R2 G3 P D2 S|S N3 D2 P M2 G3 R2 S|
+Yamunakalyani|65|S R2 G3 P M2 P D2 P S|S D2 P M2 P G3 R2 S|v
+Hamir Kalyani|65|S P M2 P D2 N3 S|S N3 D2 P M2 G3 M1 R2 S|v
+Saranga|65|S R2 G3 M2 P D2 N3 S|S N3 D2 P M2 R2 G3 M1 R2 S|v
+Sunadavinodini|65|S G3 M2 D2 N3 S|S N3 D2 M2 G3 S|
+Amritavarshini|66|S G3 M2 P N3 S|S N3 P M2 G3 S|`;
+
+// Starter song list: [title, composer]. To be verified by faculty.
+const SONGS={
+ 'Mayamalavagowla':[['Meru Samana','Tyagaraja'],['Tulasidala','Tyagaraja'],['Deva Deva Kalayamite','Swati Tirunal']],
+ 'Hanumatodi':[['Kaddanu Variki','Tyagaraja'],['Emi Jesite','Tyagaraja'],['Kartikeya Gangeya','Papanasam Sivan']],
+ 'Kharaharapriya':[['Chakkani Raja','Tyagaraja'],['Rama Nee Samanamevaru','Tyagaraja'],['Pakkala Nilabadi','Tyagaraja']],
+ 'Harikambhoji':[['Dinamani Vamsa','Tyagaraja'],['Rama Nannu Brovara','Tyagaraja'],['Enduku Nirdaya','Tyagaraja']],
+ 'Dheerashankarabharanam':[['Enduku Peddala','Tyagaraja'],['Swara Raga Sudha','Tyagaraja'],['Akshaya Linga Vibho','Muthuswami Dikshitar']],
+ 'Mechakalyani':[['Etavunara','Tyagaraja'],['Nidhi Chala Sukhama','Tyagaraja'],['Kamalambam Bhajare','Muthuswami Dikshitar']],
+ 'Keeravani':[['Kaligiyunte','Tyagaraja']],
+ 'Charukesi':[['Adamodi Galade','Tyagaraja'],['Kripaya Palaya','Swati Tirunal']],
+ 'Shanmukhapriya':[['Marivere Dikkevaru','Patnam Subramania Iyer'],['Saravanabhava','Papanasam Sivan']],
+ 'Simhendramadhyamam':[['Ninne Nammiti','Mysore Vasudevachar'],['Rama Rama Guna Seema','Swati Tirunal']],
+ 'Hemavati':[['Sri Kantimatim','Muthuswami Dikshitar']],
+ 'Latangi':[['Marivere Gati','Patnam Subramania Iyer']],
+ 'Natabhairavi':[['Sri Valli Devasenapate','Papanasam Sivan']],
+ 'Chakravakam':[['Sugunamule','Tyagaraja']],
+ 'Gourimanohari':[['Guruleka Etuvanti','Tyagaraja']],
+ 'Vachaspati':[['Kantajudumi','Tyagaraja'],['Paratpara','Papanasam Sivan']],
+ 'Kamavardhini':[['Sambho Mahadeva','Tyagaraja'],['Raghuvara Nannu','Tyagaraja']],
+ 'Shubhapantuvarali':[['Ennalu Urake','Tyagaraja']],
+ 'Mohanam':[['Nannu Palimpa','Tyagaraja'],['Bhavanuta','Tyagaraja']],
+ 'Hamsadhwani':[['Vatapi Ganapatim','Muthuswami Dikshitar'],['Raghunayaka','Tyagaraja']],
+ 'Hindolam':[['Samaja Varagamana','Tyagaraja'],['Neerajakshi Kamakshi','Muthuswami Dikshitar']],
+ 'Abheri':[['Nagumomu','Tyagaraja'],['Bhajare Re Manasa','Mysore Vasudevachar']],
+ 'Madhyamavati':[['Rama Katha Sudha','Tyagaraja'],['Palinchu Kamakshi','Syama Sastri']],
+ 'Bilahari':[['Naa Jeevadhara','Tyagaraja'],['Dorakuna','Tyagaraja']],
+ 'Arabhi':[['Sadhinchene','Tyagaraja']],
+ 'Nata':[['Jagadananda Karaka','Tyagaraja']],
+ 'Gowla':[['Dudukugala','Tyagaraja']],
+ 'Sri':[['Endaro Mahanubhavulu','Tyagaraja']],
+ 'Varali':[['Kanakana Ruchira','Tyagaraja']],
+ 'Kambhoji':[['O Rangasayee','Tyagaraja'],['Sri Subrahmanyaya Namaste','Muthuswami Dikshitar']],
+ 'Kedaragowla':[['Tulasi Bilva','Tyagaraja']],
+ 'Sahana':[['Giripai Nelakonna','Tyagaraja']],
+ 'Begada':[['Nadopasana','Tyagaraja'],['Vallabha Nayakasya','Muthuswami Dikshitar']],
+ 'Atana':[['Ela Nee Dayaradu','Tyagaraja']],
+ 'Kanada':[['Sukhi Evvaro','Tyagaraja']],
+ 'Sriranjani':[['Sogasuga Mrdanga Talamu','Tyagaraja']],
+ 'Saveri':[['Sankari Sankuru','Syama Sastri']],
+ 'Revati':[['Bho Shambho','Dayananda Saraswati']],
+ 'Anandabhairavi':[['O Jagadamba','Syama Sastri']],
+ 'Bhairavi':[['Viriboni (varnam)','Pacchimiriyam Adiappayya'],['Balagopala','Muthuswami Dikshitar']],
+ 'Mukhari':[['Karubaru','Tyagaraja']],
+ 'Kapi':[['Jagadoddharana','Purandara Dasa'],['Ennatavam Seidhanai','Papanasam Sivan']],
+ 'Abhogi':[['Manasu Nilpa','Tyagaraja']],
+ 'Purvikalyani':[['Meenakshi Me Mudam','Muthuswami Dikshitar']],
+ 'Yadukula Kambhoji':[['Hecharikaga Rara','Tyagaraja']],
+ 'Surati':[['Sri Venkatagirisam','Muthuswami Dikshitar']],
+ 'Natakurinji':[['Manasu Vishaya','Tyagaraja']],
+ 'Kamas':[['Brochevarevarura','Mysore Vasudevachar']],
+ 'Vasanta':[['Sitamma Mayamma','Tyagaraja']],
+ 'Lalitha':[['Hiranmayeem','Muthuswami Dikshitar']],
+ 'Kalyanavasantam':[['Nadaloludai','Tyagaraja']],
+ 'Malayamarutham':[['Manasa Etulortune','Tyagaraja']],
+ 'Amritavarshini':[['Anandamrutakarshini','Muthuswami Dikshitar']],
+ 'Saraswati':[['Anuragamuleni','Tyagaraja']],
+ 'Brindavana Saranga':[['Kamalapta Kula','Tyagaraja']],
+ 'Ranjani':[['Durmargachara','Tyagaraja']],
+ 'Hamsanadam':[['Bantureeti','Tyagaraja']],
+ 'Malahari':[['Sri Gananatha (geetam)','Purandara Dasa']],
+ 'Darbar':[['Yochana Kamala','Tyagaraja']],
+ 'Shuddha Saveri':[['Darini Telusukonti','Tyagaraja']],
+ 'Sama':[['Santamu Leka','Tyagaraja']],
+ 'Kedaram':[['Ananda Natana Prakasam','Muthuswami Dikshitar']],
+ 'Dhanyasi':[['Sangita Gnanamu','Tyagaraja']],
+ 'Ritigowla':[['Nannu Vidachi','Tyagaraja']],
+ 'Andolika':[['Raga Sudha Rasa','Tyagaraja']],
+ 'Janaranjani':[['Smarane Sukhamu','Tyagaraja']],
+ 'Garudadhwani':[['Tatvameruga','Tyagaraja']],
+ 'Kathanakuthuhalam':[['Raghuvamsa Sudha','Patnam Subramania Iyer']],
+ 'Yamunakalyani':[['Haridasulu','Tyagaraja']],
+ 'Mohanakalyani':[['Bhuvaneswariya','Mysore Vasudevachar']],
+ 'Bahudari':[['Brovabharama','Tyagaraja']],
+ 'Jaganmohini':[['Sobhillu Saptaswara','Tyagaraja']],
+ 'Neelambari':[['Uyyala Loogavayya','Tyagaraja']],
+ 'Poornachandrika':[['Telisi Rama','Tyagaraja']],
+ 'Manirangu':[['Mamava Pattabhirama','Muthuswami Dikshitar']]
+};
+
+
+const KATA=`ka,ka,na,na|ra,ra,tna,na|ga,ga,na,na|va,va,na,na|mā,ma,na,na|ta,ta,na,na|se,sa,nā,na|ha,ha,nu,na|dhe,dha,nu,na|nā,na,ṭa,ṭa|kō,ka,ki,ka|rū,ra,pa,pa|gā,ga,ya,ya|va,va,ku,ka|mā,ma,yā,ya|ca,ca,kra,ka|sū,sa,rya,ya|hā,ha,ṭa,ṭa|jha,jha,ṅkā,ka|na,na,ṭha,ṭha|kī,ka,ra,ra|kha,kha,ra,ra|gau,ga,rī,ra|va,va,ru,ra|mā,ma,ra,ra|cā,ca,ru,ra|sa,sa,ra,ra|ha,ha,ri,ra|dhī,dha,ra,ra|nā,na,ga,ga|yā,ya,ga,ga|rā,ra,ga,ga|gāṅ,ga,gē,ga|vā,va,ga,ga|śū,śa,li,la|ca,ca,la,la|sā,sa,la,la|ja,ja,la,la|jhā,jha,la,la|na,na,va,va|pā,pa,va,va|ra,ra,ghu,gha|ga,ga,vā,va|bha,bha,va,va|śu,śa,bha,bha|ṣa,ṣa,ḍvi,va|su,sa,va,va|di,da,vya,va|dha,dha,va,va|nā,na,ma,ma|kā,ka,ma,ma|rā,ra,ma,ma|ga,ga,ma,ma|vi,va,śva,śa|śyā,śa,ma,ma|ṣa,ṣa,ṇmu,ṇa|si,sa,ṁ,ma|hē,ha,ma,ma|dha,dha,rma,ma|nī,na,ti,ta|kā,ka,ntā,ta|ṛ,ra,ṣa,ṣa|la,la,tā,ta|vā,va,ca,ca|mē,ma,ca,ca|ci,ca,trā,ta|su,sa,ca,ca|jyō,ja,ti,ta|dhā,dha,tu,ta|nā,na,si,sa|kō,ka,sa,sa|ra,ra,si,sa`.split('|').map(s=>s.split(','));
+const KDIG={ka:1,kha:2,ga:3,gha:4,'ṅa':5,ca:6,cha:7,ja:8,jha:9,'ña':0,'ṭa':1,'ṭha':2,'ḍa':3,'ḍha':4,'ṇa':5,ta:6,tha:7,da:8,dha:9,na:0,pa:1,pha:2,ba:3,bha:4,ma:5,ya:1,ra:2,la:3,va:4,'śa':5,'ṣa':6,sa:7,ha:8};
+
+const CK_COL=['#8C1C2A','#C08A22','#B3361E','#1F5F6B','#8A5A2B','#3E6B3A','#6E2E5E','#A8552A','#2E4A7A','#9C7A1A','#5A2340','#C25B2A'];
+const mix=(hex,amt)=>{const n=parseInt(hex.slice(1),16);const r=n>>16,g=(n>>8)&255,b=n&255;const iv=[255,252,245];
+  return `rgb(${Math.round(r+(iv[0]-r)*amt)},${Math.round(g+(iv[1]-g)*amt)},${Math.round(b+(iv[2]-b)*amt)})`};
+const pc=x=>{let c=0;while(x){x&=x-1;c++}return c};
+const maskOf=toks=>toks.reduce((m,t)=>m|(1<<POS[t]),0);
+const tokKey=t=>POS[t]*10+LORD.indexOf(t[0]);
+const uniqSorted=toks=>[...new Set(toks)].sort((a,b)=>tokKey(a)-tokKey(b));
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const jati=n=>({4:'Svarantara',5:'Audava',6:'Shadava',7:'Sampurna'})[n]||(n+' notes');
+const letters=toks=>new Set(toks.map(t=>t[0]));
+const fmt=toks=>toks.join(' ');
+const $=id=>document.getElementById(id);
+// ---------- language: Harvard-Kyoto spellings, transliterated to Devanagari and Tamil ----------
+const MELA_HK='kanakAGgI|ratnAGgI|gAnamUrti|vanaspati|mAnavatI|tAnarUpi|senAvatI|hanumattoDi|dhenukA|nATakapriyA|kokilapriyA|rUpavatI|gAyakapriyA|vakuLAbharaNam|mAyAmALavagauLa|cakravAkam|sUryakAntam|hATakAmbarI|jhaGkAradhvani|naThabhairavI|kIravANi|kharaharapriyA|gaurImanoharI|varuNapriyA|mAraraJjanI|cArukezI|sarasAGgI|harikAmbhojI|dhIrazaGkarAbharaNam|nAganandinI|yAgapriyA|rAgavardhanI|gAGgeyabhUSaNI|vAgadhIzvarI|zUlinI|calanATa|sAlagam|jalArNavam|jhAlavarALi|navanItam|pAvanI|raghupriyA|gavAmbhodhi|bhavapriyA|zubhapantuvarALi|SaDvidhamArgiNI|suvarNAGgI|divyamaNi|dhavaLAmbarI|nAmanArAyaNI|kAmavardhanI|rAmapriyA|gamanazramA|vizvambharI|zyAmaLAGgI|SaNmukhapriyA|siMhendramadhyamam|hemavatI|dharmavatI|nItimatI|kAntAmaNi|RSabhapriyA|latAGgI|vAcaspati|mecakalyANI|citrAmbarI|sucaritra|jyotisvarUpiNI|dhAtuvardhanI|nAsikAbhUSaNI|kosalam|rasikapriyA'.split('|');
+const CK_HK='indu|netra|agni|veda|bANa|Rtu|RSi|vasu|brahma|dizi|rudra|Aditya'.split('|');
+const JANYA_HK={'Malahari':'malahari','Saveri':'sAveri','Bowli':'bauLi','Revagupti':'revaguptI','Gowla':'gauLa','Lalitha':'lalitA','Jaganmohini':'jaganmohinI','Gowri':'gaurI','Nadanamakriya':'nAdanAmakriyA','Dhanyasi':'dhanyAsi','Punnagavarali':'punnAgavarALi','Bhupalam':'bhUpALam','Asaveri':'asAveri','Shuddha Seemantini':'zuddha sImantinI','Revati':'revatI','Malayamarutham':'malayamArutam','Vasanta':'vasantA','Hindolam':'hindoLam','Jayanthasri':'jayantazrI','Saramati':'sAramati','Jonpuri':'jonpurI','Bhairavi':'bhairavI','Anandabhairavi':'Anandabhairavi','Kalyanavasantam':'kalyANavasantam','Abheri':'AbherI','Shuddha Dhanyasi':'zuddha dhanyAsi','Sriranjani':'zrIraJjanI','Madhyamavati':'madhyamAvatI','Sri':'zrI','Mukhari':'mukhAri','Kanada':'kAnaDA','Darbar':'darbAr','Bageshri':'bAgezrI','Brindavana Saranga':'bRndAvana sAraGgA','Kapi':'kApi','Abhogi':'Abhogi','Shivaranjani':'zivaraJjanI','Huseni':'husenI','Devamanohari':'devamanoharI','Manirangu':'maNiraGgu','Ritigowla':'rItigauLa','Andolika':'AndoLikA','Jayamanohari':'jayamanoharI','Nayaki':'nAyakI','Mohanam':'mohanam','Kambhoji':'kAmbhojI','Kedaragowla':'kedAragauLa','Yadukula Kambhoji':'yadukula kAmbhojI','Sahana':'sahAnA','Natakurinji':'nATakuriJji','Kamas':'khamAs','Surati':'suraTi','Bahudari':'bahudAri','Kuntalavarali':'kuntaLavarALi','Pratapavarali':'pratApavarALi','Valaji':'vaLaji','Nagaswaravali':'nAgasvarAvaLi','Bilahari':'bilahari','Hamsadhwani':'haMsadhvani','Arabhi':'Arabhi','Devagandhari':'devagAndhAri','Shuddha Saveri':'zuddha sAveri','Kedaram':'kedAram','Begada':'begaDa','Atana':'aThANA','Poornachandrika':'pUrNacandrikA','Janaranjani':'janaraJjanI','Kurinji':'kuriJji','Neelambari':'nIlAmbarI','Garudadhwani':'garuDadhvani','Sama':'sAmA','Kathanakuthuhalam':'kathanakutUhalam','Behag':'behAg','Mand':'mAND','Nata':'nATa','Gambhiranata':'gambhIranATa','Varali':'varALi','Purvikalyani':'pUrvIkalyANI','Hamsanandi':'haMsAnandi','Madhuvanti':'madhuvanti','Ranjani':'raJjanI','Hamsanadam':'haMsanAdam','Saraswati':'sarasvatI','Mohanakalyani':'mohanakalyANI','Yamunakalyani':'yamunAkalyANI','Hamir Kalyani':'hamIrkalyANI','Saranga':'sAraGgA','Sunadavinodini':'sunAdavinodinI','Amritavarshini':'amRtavarSiNI'};
+
+const HK_V=['ai','au','a','A','i','I','u','U','R','e','o'];
+const HK_C=['kh','gh','ch','jh','Th','Dh','th','dh','ph','bh','k','g','G','c','j','J','T','D','N','t','d','n','p','b','m','y','r','l','L','v','z','S','s','h'];
+function hkTok(s){const out=[];let i=0;
+  while(i<s.length){if(s[i]===' '){out.push({t:'sp'});i++;continue}if(s[i]==='M'){out.push({t:'M'});i++;continue}
+    const c=HK_C.find(x=>s.startsWith(x,i));if(c){out.push({t:'c',v:c});i+=c.length;continue}
+    const v=HK_V.find(x=>s.startsWith(x,i));if(v){out.push({t:'v',v});i+=v.length;continue}i++}
+  return out}
+const DV={c:{k:'क',kh:'ख',g:'ग',gh:'घ',G:'ङ',c:'च',ch:'छ',j:'ज',jh:'झ',J:'ञ',T:'ट',Th:'ठ',D:'ड',Dh:'ढ',N:'ण',t:'त',th:'थ',d:'द',dh:'ध',n:'न',p:'प',ph:'फ',b:'ब',bh:'भ',m:'म',y:'य',r:'र',l:'ल',L:'ळ',v:'व',z:'श',S:'ष',s:'स',h:'ह'},
+  v:{a:'अ',A:'आ',i:'इ',I:'ई',u:'उ',U:'ऊ',R:'ऋ',e:'ए',o:'ओ',ai:'ऐ',au:'औ'},m:{a:'',A:'ा',i:'ि',I:'ी',u:'ु',U:'ू',R:'ृ',e:'े',o:'ो',ai:'ै',au:'ौ'},vir:'्',M:'ं'};
+const TA={c:{k:'க',kh:'க',g:'க',gh:'க',G:'ங',c:'ச',ch:'ச',j:'ஜ',jh:'ஜ',J:'ஞ',T:'ட',Th:'ட',D:'ட',Dh:'ட',N:'ண',t:'த',th:'த',d:'த',dh:'த',n:'ன',p:'ப',ph:'ப',b:'ப',bh:'ப',m:'ம',y:'ய',r:'ர',l:'ல',L:'ள',v:'வ',z:'ச',S:'ஷ',s:'ஸ',h:'ஹ'},
+  v:{a:'அ',A:'ஆ',i:'இ',I:'ஈ',u:'உ',U:'ஊ',R:'ரு',e:'ஏ',o:'ஓ',ai:'ஐ',au:'ஔ'},m:{a:'',A:'ா',i:'ி',I:'ீ',u:'ு',U:'ூ',R:'்ரு',e:'ே',o:'ோ',ai:'ை',au:'ௌ'},vir:'்',M:'ம்'};
+function translit(hk,S,tamil){
+  const tk=hkTok(hk);let o='';
+  tk.forEach((x,i)=>{const prev=tk[i-1],next=tk[i+1];
+    if(x.t==='sp'){o+=' ';return}if(x.t==='M'){o+=S.M;return}
+    if(x.t==='v'){let vv=x.v;if(tamil&&vv==='I'&&(!next||next.t==='sp'))vv='i';if(prev&&prev.t==='c')o+=S.m[vv];else o+=S.v[vv];return}
+    let ch=S.c[x.v];
+    if(tamil){if(false){}if(x.v==='n'&&(!prev||prev.t==='sp'||(next&&next.t==='c'&&['t','th','d','dh'].includes(next.v))))ch='ந';
+      if(x.v==='z'&&next&&next.t==='c'&&next.v==='r')ch='ஸ';}
+    o+=ch;if(!next||next.t!=='v')o+=S.vir});
+  return o}
+const dev=hk=>translit(hk,DV,false), tam=hk=>translit(hk,TA,true);
+
+const LANGS={en:'English',sa:'संस्कृतम्',ta:'தமிழ்'};
+let LANG=(()=>{try{return localStorage.getItem('rk-lang')||'en'}catch(e){return 'en'}})();
+const TX={
+ wheel:['Wheel','चक्रम्','சக்கரம்'],finder:['Swara finder','स्वरान्वेषणम्','ஸ்வர தேடல்'],ragas:['All ragas','सर्वे रागाः','அனைத்து ராகங்கள்'],
+ find:['Find','अन्वेषणम्','தேடல்'],melakarta:['Melakarta','मेलकर्ता','மேளகர்த்தா'],chakra:['chakra','चक्रम्','சக்கரம்'],janyaRaga:['Janya raga','जन्यरागः','ஜன்ய ராகம்'],
+ open:['Open raga →','रागं पश्य →','ராகத்தைத் திற →'],play:['▶ Play','▶ वादय','▶ இசை'],hear:['▶ Hear it','▶ श्रूयताम्','▶ கேளுங்கள்'],
+ aro:['Arohanam','आरोहणम्','ஆரோகணம்'],ava:['Avarohanam','अवरोहणम्','அவரோகணம்'],swarasthanas:['Swarasthanas','स्वरस्थानानि','ஸ்வரஸ்தானங்கள்'],
+ lakshanam:['Lakshanam','लक्षणम्','லக்ஷணம்'],relatives:['Relatives','सम्बद्धरागाः','தொடர்புடைய ராகங்கள்'],change:['Change a note','स्वरपरिवर्तनम्','ஸ்வர மாற்றம்'],
+ janyas:['Janya ragas','जन्यरागाः','ஜன்ய ராகங்கள்'],songs:['Songs','कृतयः','பாடல்கள்'],graha:['Graha bhedam','ग्रहभेदः','கிரக பேதம்'],kata:['Katapayadi sankhya','कटपयादि सङ्ख्या','கடபயாதி எண்'],
+ back:['← the wheel','← चक्रम्','← சக்கரம்'],tanpura:['Tanpura','तम्बूरा','தம்புரா'],kalam:['Kalam','कालः','காலம்'],dikshitar:['Dikshitar school','दीक्षितसम्प्रदायः','தீட்சிதர் மரபு'],
+ carnatic:['Carnatic','कर्णाटकम्','கர்நாடகம்'],hindustani:['Hindustani','हिन्दुस्तानी','ஹிந்துஸ்தானி'],western:['Western','पाश्चात्यम्','மேற்கத்திய'],
+ shuddhaM:['Shuddha madhyama','शुद्धमध्यमः','சுத்த மத்யமம்'],pratiM:['Prati madhyama','प्रतिमध्यमः','பிரதி மத்யமம்'],vivadi:['Vivadi','विवादी','விவாதி'],sampurna:['Sampurna','सम्पूर्णम्','சம்பூர்ணம்'],
+ vakra:['Vakra','वक्रम्','வக்ரம்'],bhashanga:['Bhashanga','भाषाङ्गम्','பாஷாங்கம்'],upanga:['Upanga','उपाङ्गम्','உபாங்கம்'],
+ melas72:['MELAKARTAS','मेलकर्तारः','மேளகர்த்தாக்கள்'],janyaOf:['Janya of','जन्यः —','ஜன்யம் —'],
+ fChakra:['Chakra','चक्रम्','சக்கரம்'],fStruct:['Structure','रचना','அமைப்பு'],fMadhya:['Madhyamam','मध्यमम्','மத்யமம்'],fCounter:['Counterpart','प्रतिरूपम्','இணை மேளம்'],
+ fThaat:['Hindustani thaat','थाट्','தாட்'],fWest:['Western scale','पाश्चात्य स्वरसप्तकम्','மேற்கத்திய அளவு'],fJcount:['Janyas in library','जन्यरागाः (सङ्ग्रहे)','ஜன்ய ராகங்கள் (தொகுப்பில்)'],
+ fParent:['Parent mela','जनकमेलः','ஜனக மேளம்'],fJati:['Jati','जातिः','ஜாதி'],fVarA:['Varjya in arohanam','आरोहणे वर्ज्याः','ஆரோகண வர்ஜ்யம்'],fVarV:['Varjya in avarohanam','अवरोहणे वर्ज्याः','அவரோகண வர்ஜ்யம்'],
+ fVakra:['Vakra','वक्रम्','வக்ரம்'],fAnya:['Anya swara','अन्यस्वरः','அன்ய ஸ்வரம்'],none:['None','न','இல்லை'],yes:['Yes','आम्','ஆம்'],no:['No','न','இல்லை'],
+ searchPh:['Name a raga, a mela number, or type swaras like S R2 G3 P D2','रागनाम, मेलसङ्ख्या, अथवा स्वराः (S R2 G3 P D2)','ராகப் பெயர், மேள எண், அல்லது ஸ்வரங்கள் (S R2 G3 P D2)'],
+ finderH:['Which raga is this?','कोऽयं रागः?','இது எந்த ராகம்?'],ragasH:['All ragas','सर्वे रागाः','அனைத்து ராகங்கள்'],library:['Library','सङ्ग्रहः','தொகுப்பு'],
+ exact:['Exact matches','समानाः रागाः','சரியான பொருத்தம்'],oneAway:['One note away','एकस्वरभेदः','ஒரு ஸ்வர வேறுபாடு'],becomes:['Becomes','परिणामः','ஆகும் ராகம்'],
+ lang:['Language','भाषा','மொழி'],takeAs:['as Sa','षड्जत्वेन','ஷட்ஜமாக'],noNamed:['no named raga in the library','सङ्ग्रहे नामधेयः रागो नास्ति','தொகுப்பில் பெயருள்ள ராகம் இல்லை'],
+ readRL:['Read right to left','दक्षिणतः वामं पठ्यताम्','வலமிருந்து இடமாகப் படிக்கவும்'],sameSw:['the same swaras, different sanchara','समानस्वराः, भिन्नसञ्चारः','அதே ஸ்வரங்கள், வேறு சஞ்சாரம்'],
+ grahaRel:['graha bhedam: take {s} as Sa','ग्रहभेदः: {s} षड्जत्वेन','கிரக பேதம்: {s} ஷட்ஜமாக']
+};
+const LI={en:0,sa:1,ta:2};
+const T=(k,vars)=>{let s=(TX[k]||[k])[LI[LANG]]??TX[k][0];if(vars)for(const v in vars)s=s.replace('{'+v+'}',vars[v]);return s};
+const SWL={en:{S:'S',R:'R',G:'G',M:'M',P:'P',D:'D',N:'N'},sa:{S:'स',R:'रि',G:'ग',M:'म',P:'प',D:'ध',N:'नि'},ta:{S:'ஸ',R:'ரி',G:'க',M:'ம',P:'ப',D:'த',N:'நி'}};
+const SUB={1:'₁',2:'₂',3:'₃'};
+const swL=t=>{if(LANG==='en')return t;const L=SWL[LANG][t[0]];return t.length>1?L+SUB[t[1]]:L};
+const swSeq=(toks,up)=>toks.map((t,i)=>{const top=t==='S'&&((up&&i===toks.length-1)||(!up&&i===0));return top?swL('S')+'̇':swL(t)}).join(' ');
+const FULL_X={sa:{S:'षड्जम्',R1:'शुद्ध ऋषभम्',R2:'चतुश्रुति ऋषभम्',R3:'षट्श्रुति ऋषभम्',G1:'शुद्ध गान्धारम्',G2:'साधारण गान्धारम्',G3:'अन्तर गान्धारम्',M1:'शुद्ध मध्यमम्',M2:'प्रति मध्यमम्',P:'पञ्चमम्',D1:'शुद्ध धैवतम्',D2:'चतुश्रुति धैवतम्',D3:'षट्श्रुति धैवतम्',N1:'शुद्ध निषादम्',N2:'कैशिकी निषादम्',N3:'काकली निषादम्'},
+ ta:{S:'ஷட்ஜம்',R1:'சுத்த ரிஷபம்',R2:'சதுஸ்ருதி ரிஷபம்',R3:'ஷட்ஸ்ருதி ரிஷபம்',G1:'சுத்த காந்தாரம்',G2:'சாதாரண காந்தாரம்',G3:'அந்தர காந்தாரம்',M1:'சுத்த மத்யமம்',M2:'பிரதி மத்யமம்',P:'பஞ்சமம்',D1:'சுத்த தைவதம்',D2:'சதுஸ்ருதி தைவதம்',D3:'ஷட்ஸ்ருதி தைவதம்',N1:'சுத்த நிஷாதம்',N2:'கைசிகி நிஷாதம்',N3:'காகலி நிஷாதம்'}};
+const fullL=t=>LANG==='en'?FULL[t]:FULL_X[LANG][t];
+const JATI_X={sa:{4:'स्वरान्तर',5:'औडव',6:'षाडव',7:'सम्पूर्ण'},ta:{4:'ஸ்வராந்தர',5:'ஔடவ',6:'ஷாடவ',7:'சம்பூர்ண'}};
+const jatiL=n=>LANG==='en'?jati(n):(JATI_X[LANG][n]||n);
+
+
+const melas=NAMES.map((name,i)=>{
+  const n=i+1, idx=i%36, rgI=Math.floor(idx/6), dnI=idx%6;
+  const rg=RG[rgI], dn=DN[dnI], m=n<=36?'M1':'M2';
+  const sw=['S',rg[0],rg[1],m,'P',dn[0],dn[1]];
+  return {kind:'mela',id:'m'+n,n,name,hk:MELA_HK[i],dname:DNAMES[i],alias:ALIAS[n]||[],sw,
+    aro:[...sw,'S'],ava:['S',...sw.slice(1).reverse(),'S'],mask:maskOf(sw),
+    chakra:Math.floor(i/6),rgI,dnI,vivadi:rgI===0||rgI===5||dnI===0||dnI===5};
+});
+const janyas=JDATA.trim().split('\n').map(line=>{
+  const [name,mel,aro,ava,fl]=line.split('|');
+  const a=aro.trim().split(/\s+/), v=ava.trim().split(/\s+/);
+  const sw=uniqSorted([...a,...v]);
+  return {kind:'janya',id:'r-'+slug(name),name,hk:JANYA_HK[name],mela:+mel,aro:a,ava:v,sw,mask:maskOf(sw),vakra:(fl||'').includes('v')};
+});
+const ALL=[...melas,...janyas];
+const byId={}; ALL.forEach(r=>byId[r.id]=r);
+const byMask={}; ALL.forEach(r=>(byMask[r.mask]=byMask[r.mask]||[]).push(r));
+const janyaOf={}; janyas.forEach(j=>(janyaOf[j.mela]=janyaOf[j.mela]||[]).push(j));
+const parentOf=j=>melas[j.mela-1];
+const melaOf=r=>r.kind==='mela'?r:parentOf(r);
+function nameIn(toks,bit){const t=toks.find(x=>POS[x]===bit);return t||STRIP[bit][0]}
+function rotate(mask,k){return ((mask>>k)|(mask<<(12-k)))&0xFFF}
+const nm=r=>LANG==='en'||!r.hk?r.name:(LANG==='sa'?dev(r.hk):tam(r.hk));
+const ckN=c=>LANG==='en'?CHAKRAS[c]:(LANG==='sa'?dev(CK_HK[c]):tam(CK_HK[c]));
+
+// ---------- audio core ----------
+const RATIO=[1,16/15,9/8,6/5,5/4,4/3,45/32,3/2,8/5,5/3,9/5,15/8];
+const SHRUTIS=[['C · 1',261.63],['C# · 1½',277.18],['D · 2',293.66],['D# · 2½',311.13],['E · 3',329.63],['F · 4',349.23],['F# · 4½',369.99],['G · 5',196.00],['G# · 5½',207.65],['A · 6',220.00],['A# · 6½',233.08],['B · 7',246.94]];
+const shSel=$('shruti'),tempoSel=$('tempo');
+shSel.innerHTML=SHRUTIS.map((s,i)=>`<option value="${i}">${s[0]}</option>`).join('');
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+shSel.value=store.get('rk-shruti')??'1'; tempoSel.value=store.get('rk-tempo')??'0.44';
+const base=()=>SHRUTIS[+shSel.value][1];
+const freq=s=>base()*RATIO[((s%12)+12)%12]*Math.pow(2,Math.floor(s/12));
+let ctx=null,bus=null,live=[],timers=[],drone=null;
+function impulse(c,sec,decay){const sr=c.sampleRate,n=Math.floor(sr*sec),b=c.createBuffer(2,n,sr);
+  for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<n;i++){const t=i/n;d[i]=(Math.random()*2-1)*Math.pow(1-t,decay)*(i<sr*.01?i/(sr*.01):1)}}return b}
+function ac(){
+  if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const comp=ctx.createDynamicsCompressor();comp.threshold.value=-16;comp.ratio.value=3;comp.connect(ctx.destination);
+    const dry=ctx.createGain();dry.gain.value=.85;dry.connect(comp);
+    const verb=ctx.createConvolver();verb.buffer=impulse(ctx,3.2,3.2);
+    const pre=ctx.createDelay();pre.delayTime.value=.025;
+    const wet=ctx.createGain();wet.gain.value=.4;const wetLp=ctx.createBiquadFilter();wetLp.type='lowpass';wetLp.frequency.value=5200;
+    pre.connect(verb).connect(wetLp).connect(wet).connect(comp);
+    const input=ctx.createGain();input.connect(dry);input.connect(pre);bus=input;}
+  if(ctx.state==='suspended')ctx.resume();return ctx}
+// Plucked string (Karplus-Strong) with pluck-position comb and a curved-bridge "jawari" nonlinearity, cached
+const ksCache={};
+function ksBuffer(f,dur,t60,bright,jaw,pos){
+  const c=ac(),key=[Math.round(f*100),dur,t60,bright,jaw,pos].join('|');if(ksCache[key])return ksCache[key];
+  const sr=c.sampleRate,n=Math.floor(sr*dur),buf=c.createBuffer(1,n,sr),d=buf.getChannelData(0);
+  const D=sr/f-0.5,L=Math.ceil(D)+1,damp=Math.pow(0.001,1/(f*t60));
+  // triangular pluck shape at the pluck position, plus a little noise for the plectrum attack
+  const ex=new Float32Array(L),P=Math.max(1,Math.floor(L*pos));let lp=0;
+  for(let i=0;i<L;i++){const tri=i<P?i/P:(L-i)/(L-P);lp+=bright*((Math.random()*2-1)-lp);ex[i]=tri+.18*lp}
+  let mean=0;for(let i=0;i<L;i++)mean+=ex[i];mean/=L;
+  for(let i=0;i<L&&i<n;i++)d[i]=ex[i]-mean;
+  for(let i=L;i<n;i++){const p=i-D,i0=Math.floor(p),fr=p-i0;
+    const a=d[i0]*(1-fr)+d[i0+1]*fr,b=(d[i0-1]||0)*(1-fr)+d[i0]*fr;
+    let v=damp*.5*(a+b);v-=jaw*v*Math.abs(v);d[i]=v}
+  let mx=0;for(let i=0;i<n;i++)mx=Math.max(mx,Math.abs(d[i]));
+  const g=.9/(mx||1),fade=Math.floor(sr*.05);for(let i=0;i<n;i++){d[i]*=g;if(i>n-fade)d[i]*=(n-i)/fade}
+  return ksCache[key]=buf;
+}
+// Veena voice chain: kudam body resonance + soft top
+let veenaBus=null;
+function veenaOut(){
+  if(veenaBus)return veenaBus;const c=ac();
+  const b1=c.createBiquadFilter();b1.type='peaking';b1.frequency.value=220;b1.gain.value=5;b1.Q.value=1.1;
+  const b2=c.createBiquadFilter();b2.type='peaking';b2.frequency.value=1150;b2.gain.value=3;b2.Q.value=1.4;
+  const b3=c.createBiquadFilter();b3.type='peaking';b3.frequency.value=3200;b3.gain.value=2.5;b3.Q.value=1.2;
+  const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=6500;
+  b1.connect(b2).connect(b3).connect(lp).connect(bus);return veenaBus=b1;
+}
+function veenaNote(f,t,vol){
+  const c=ac(),out=veenaOut();
+  [[1,vol,0],[1.0018,vol*.32,.004]].forEach(([m,v,dt])=>{
+    const s=c.createBufferSource(),g=c.createGain();s.buffer=ksBuffer(f*m,3.2,2.6,.6,.03,.13);
+    g.gain.value=v;s.connect(g).connect(out);s.start(t+dt);live.push(s)});
+}
+function semis(toks,seed,dir){
+  let prev=seed;return toks.map((t,idx)=>{const p=POS[t];const cands=[-12,0,12,24].map(o=>p+o);
+    const dirC=cands.filter(v=>dir>0?(v>prev&&v-prev<=7):(v<prev&&prev-v<=7));
+    let best;if(dirC.length)best=dir>0?Math.min(...dirC):Math.max(...dirC);
+    else best=cands.reduce((a,b)=>Math.abs(b-prev)<Math.abs(a-prev)?b:a);
+    if(idx===0&&dir>0&&p===0)best=0;prev=best;return best});
+}
+function stopAll(){live.forEach(o=>{try{o.stop()}catch(e){}});live=[];timers.forEach(clearTimeout);timers=[];
+  document.querySelectorAll('.bar.ring').forEach(b=>b.classList.remove('ring'));document.querySelectorAll('.playing').forEach(b=>b.classList.remove('playing'))}
+function light(s,on){const idx=s>=12&&s%12===0?12:((s%12)+12)%12;document.querySelectorAll(`#bars .bar[data-i="${idx}"]`).forEach(b=>b.classList.toggle('ring',on))}
+function playSemis(list,btn){
+  stopAll();const c=ac();const step=+tempoSel.value,t0=c.currentTime+.08;
+  if(btn)btn.classList.add('playing');
+  list.forEach((s,i)=>veenaNote(freq(s),t0+i*step,.62));
+  list.forEach((s,i)=>{timers.push(setTimeout(()=>light(s,true),(t0-c.currentTime+i*step)*1000));timers.push(setTimeout(()=>light(s,false),(t0-c.currentTime+(i+1)*step)*1000-30))});
+  timers.push(setTimeout(()=>btn&&btn.classList.remove('playing'),(list.length*step+.4)*1000));
+}
+function playScale(aro,ava,btn){const a=aro?semis(aro,-1,1):[];const v=ava?semis(ava,13,-1):[];playSemis([...a,...v],btn)}
+function playOne(s){const c=ac();veenaNote(freq(s),c.currentTime+.02,.65)}
+
+// Tanpura: four strings (mandra Pa, madhya Sa, madhya Sa, mandra Sa) plucked in the traditional cycle, long sustain, strong jawari
+function startDrone(){
+  const c=ac(),out=c.createGain();out.gain.value=0;out.gain.linearRampToValueAtTime(.55,c.currentTime+.4);
+  const body=c.createBiquadFilter();body.type='peaking';body.frequency.value=180;body.gain.value=4;body.Q.value=.9;
+  const air=c.createBiquadFilter();air.type='highshelf';air.frequency.value=2500;air.gain.value=3;
+  out.connect(body).connect(air).connect(bus);
+  const b=base(),strings=[{f:b*.75,pan:-.35,v:.5},{f:b,pan:.15,v:.42},{f:b*1.0006,pan:.3,v:.42},{f:b/2,pan:-.1,v:.62}];
+  const gaps=[1.05,1.05,1.05,1.75];let i=0,next=c.currentTime+.1;
+  const tick=()=>{while(next<c.currentTime+.4){const s=strings[i%4];
+    const pn=c.createStereoPanner?c.createStereoPanner():c.createGain();if(pn.pan)pn.pan.value=s.pan;pn.connect(out);
+    [[1,s.v],[1.0012,s.v*.45]].forEach(([m,v],k)=>{const src=c.createBufferSource(),g=c.createGain();
+      src.buffer=ksBuffer(s.f*m,7,9,.8,.07,.18);g.gain.value=v;src.connect(g).connect(pn);src.start(next+k*.006);drone.srcs.push(src)});
+    if(drone.srcs.length>40)drone.srcs.splice(0,16);
+    next+=gaps[i%4];i++}};
+  drone={iv:null,out,srcs:[]};tick();drone.iv=setInterval(tick,120);
+}
+function stopDrone(){if(!drone)return;clearInterval(drone.iv);const d=drone;d.out.gain.cancelScheduledValues(ctx.currentTime);d.out.gain.setTargetAtTime(0,ctx.currentTime,.35);setTimeout(()=>d.srcs.forEach(s=>{try{s.stop()}catch(e){}}),2000);drone=null}
+const droneBtn=$('droneBtn');
+droneBtn.onclick=()=>{if(drone){stopDrone();droneBtn.classList.remove('on');droneBtn.setAttribute('aria-pressed','false')}else{startDrone();droneBtn.classList.add('on');droneBtn.setAttribute('aria-pressed','true')}};
+shSel.onchange=()=>{store.set('rk-shruti',shSel.value);if(drone){stopDrone();startDrone()}};
+tempoSel.onchange=()=>store.set('rk-tempo',tempoSel.value);
+
+
+
+// ---------- wheel: fixed dial, rotating needle ----------
+let needleDeg=2.5,wheelSel=15,drag=null;
+const A=(r,deg)=>{const a=(deg-90)*Math.PI/180;return [+(r*Math.cos(a)).toFixed(2),+(r*Math.sin(a)).toFixed(2)]};
+function wedge(r1,r2,d1,d2){const [x1,y1]=A(r2,d1),[x2,y2]=A(r2,d2),[x3,y3]=A(r1,d2),[x4,y4]=A(r1,d1);
+  return `M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z`}
+const tr=deg=>deg>90&&deg<270?deg+180:deg;
+function renderWheel(){
+  let s=`<svg class="wheel" id="wsvg" viewBox="-292 -292 584 584" tabindex="0" role="application" aria-label="Melakarta dial. Arrow keys move the needle, Enter opens the raga.">`;
+  for(let c=0;c<12;c++){const d1=c*30,d2=d1+30,dm=d1+15,[x,y]=A(150,dm);
+    s+=`<g class="ckseg"><path d="${wedge(118,182,d1,d2)}" fill="${CK_COL[c]}"/><text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" transform="rotate(${tr(dm)} ${x} ${y})">${LANG==='en'?CHAKRAS[c].toUpperCase():ckN(c)}</text></g>`}
+  melas.forEach((m,i)=>{const d1=i*5,d2=d1+5,dm=d1+2.5,[x,y]=A(232,dm);const light=i%2?.72:.62;
+    s+=`<g class="seg" data-mela="${m.n}"><path d="${wedge(188,276,d1,d2)}" fill="${mix(CK_COL[m.chakra],light)}"/><text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" fill="${CK_COL[m.chakra]}" transform="rotate(${tr(dm)-90} ${x} ${y})">${m.n}</text></g>`});
+  [0,180].forEach(d=>{const [x1,y1]=A(112,d),[x2,y2]=A(282,d);s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--gold)" stroke-width="2.5"/>`});
+  const [mx1,my1]=A(286,45),[mx2,my2]=A(286,315);
+  s+=`<text class="hubl" x="${mx1}" y="${my1}" text-anchor="start">M1 →</text><text class="hubl" x="${mx2}" y="${my2}" text-anchor="end">← M2</text>`;
+  s+=`<g class="needle" id="needle" style="transform:rotate(${needleDeg}deg)"><path class="shaft" d="M-5 -104 L0 -272 L5 -104 Z"/><path class="tip" d="M-10 -291 L10 -291 L0 -276 Z"/></g>`;
+  s+=`<circle r="104" class="hub1"/><circle r="94" class="hub2"/>`;
+  for(let k=0;k<36;k++){const [x,y]=A(99,k*10);s+=`<circle cx="${x}" cy="${y}" r="${k%3?1:2}" fill="var(--gold)"/>`}
+  s+=`<text class="hubck" text-anchor="middle" y="-42" id="hubCk"></text><text class="hubn" text-anchor="middle" y="16" id="hubN"></text><text class="hubname" text-anchor="middle" y="44" id="hubName"></text><text class="hubl" text-anchor="middle" y="66" id="hubL">${T('melas72')}</text></svg>`;
+  $('wheelbox').innerHTML=s;
+  const svg=$('wsvg');
+  const angleAt=e=>{const b=svg.getBoundingClientRect();const cx=b.left+b.width/2,cy=b.top+b.height/2;let a=Math.atan2(e.clientX-cx,-(e.clientY-cy))*180/Math.PI;return (a+360)%360};
+  const idxAt=a=>Math.min(71,Math.floor(a/5));
+  svg.addEventListener('pointerdown',e=>{drag={};svg.setPointerCapture(e.pointerId);const a=angleAt(e);setNeedle(a,true);hov(idxAt(a)+1)});
+  svg.addEventListener('pointermove',e=>{const a=angleAt(e);if(drag){setNeedle(a,true);hov(idxAt(a)+1)}else{hov(null)}});
+  const end=e=>{if(!drag)return;drag=null;$('needle').classList.remove('free');hov(null);spinTo(idxAt(angleAt(e))+1,true)};
+  svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',()=>{drag=null;spinTo(wheelSel,false)});
+  svg.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();spinTo(wheelSel%72+1,true)}
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();spinTo((wheelSel+70)%72+1,true)}
+    else if(e.key==='Enter'){go('m'+wheelSel)}});
+  svg.addEventListener('wheel',e=>{if(!e.deltaY)return;e.preventDefault();clearTimeout(svg._wt);svg._wt=setTimeout(()=>spinTo(e.deltaY>0?wheelSel%72+1:(wheelSel+70)%72+1,true),30)},{passive:false});
+  spinTo(wheelSel,false);
+}
+function setNeedle(a,free){let d=a-((needleDeg%360)+360)%360;d=((d%360)+540)%360-180;needleDeg+=d;const n=$('needle');if(!n)return;n.classList.toggle('free',!!free);n.style.transform=`rotate(${needleDeg}deg)`}
+function hov(n){document.querySelectorAll('.seg.hov').forEach(e=>e.classList.remove('hov'));if(n){const s=document.querySelector(`.seg[data-mela="${n}"]`);if(s)s.classList.add('hov');hubShow(melas[n-1])}else hubShow(melas[wheelSel-1])}
+function hubShow(m){if(!$('hubN'))return;$('hubN').textContent=m.n;const name=nm(m);$('hubName').textContent=name.length>15?name.slice(0,14)+'…':name;$('hubCk').textContent=(LANG==='en'?CHAKRAS[m.chakra].toUpperCase()+' CHAKRA':ckN(m.chakra))}
+function spinTo(n,play){
+  wheelSel=n;setNeedle((n-1)*5+2.5,false);
+  document.querySelectorAll('.seg.sel').forEach(e=>e.classList.remove('sel'));const s=document.querySelector(`.seg[data-mela="${n}"]`);if(s)s.classList.add('sel');
+  hubShow(melas[n-1]);renderSide();if(play){const m=melas[n-1];playScale(m.aro,null)}
+}
+function renderSide(){
+  const m=melas[wheelSel-1],jc=(janyaOf[m.n]||[]).length,k=KATA[m.n-1];
+  $('side').innerHTML=`<div class="label">${T('melakarta')} ${m.n} · ${ckN(m.chakra)} ${LANG==='en'?T('chakra'):''}</div>
+    <button class="name" data-open="${m.id}">${nm(m)}</button>
+    <div class="dn">${LANG!=='en'?m.name+' · ':''}${T('dikshitar')}: ${m.dname}${m.alias.filter(a=>a!==m.dname).length?' · '+m.alias.filter(a=>a!==m.dname).join(', '):''}</div>
+    <div class="sw">${swSeq(m.aro,true)}</div>
+    <div class="tags" style="margin-bottom:16px">${m.vivadi?`<span class="tag">${T('vivadi')}</span>`:''}<span class="tag m">${m.n<=36?T('shuddhaM'):T('pratiM')}</span>${jc?`<span class="tag g">${jc} ${T('janyas')}</span>`:''}<span class="tag">${T('kata')}: ${k[0]}·${k[2]} → ${m.n}</span></div>
+    <div class="acts"><button class="btn" data-open="${m.id}">${T('open')}</button><button class="btn ghost" data-playid="${m.id}">${T('play')}</button></div>
+    <p class="hint">Drag the needle round the dial, tap a number, scroll, or use the arrow keys. The mela it lands on plays.</p>`;
+}
+
+// ---------- shared ----------
+function identify(mask,qToks,excludeId){
+  const exact=ALL.filter(r=>r.mask===mask&&r.id!==excludeId);
+  const parents=pc(mask)<7?melas.filter(m=>(m.mask&mask)===mask&&m.mask!==mask):[];
+  const near=[];
+  ALL.forEach(r=>{if(r.id===excludeId||r.mask===mask)return;const x=r.mask^mask;
+    if(pc(x)===1){const b=31-Math.clz32(x);near.push({r,why:(r.mask&x)?`adds ${swL(nameIn(r.sw,b))}`:`drops ${swL(nameIn(qToks,b))}`})}
+    else if(pc(x)===2&&pc(r.mask)===pc(mask)){const bR=31-Math.clz32(r.mask&x),bQ=31-Math.clz32(mask&x);
+      near.push({r,why:`${swL(nameIn(r.sw,bR))} instead of ${swL(nameIn(qToks,bQ))}`})}});
+  near.sort((a,b)=>(a.r.kind===b.r.kind?0:a.r.kind==='mela'?-1:1));
+  return {exact,parents,near};
+}
+const tag=r=>r.kind==='mela'?'Mela '+r.n:'⟵ '+r.mela;
+function relRow(r,why){return `<div class="rel"><button class="pb" data-playid="${r.id}" aria-label="Play ${r.name}">▶</button><div class="txt"><button class="nm" data-open="${r.id}">${nm(r)}</button><div class="why">${why}</div></div><span class="no">${tag(r)}</span></div>`}
+function chip(r,extra){return `<button class="chip" data-open="${r.id}">${nm(r)}<small>${extra??tag(r)}</small></button>`}
+function resultsHTML(res){
+  let h=`<div class="card"><h3 class="label">${T('exact')} · ${res.exact.length}</h3>`;
+  h+=res.exact.length?res.exact.map(r=>relRow(r,swSeq(r.aro,true)+'  ·  '+swSeq(r.ava,false))).join(''):`<p class="empty">No raga in the library has exactly these swaras. It may be rare or unnamed.</p>`;
+  if(res.parents.length)h+=`<h4 class="sub">${T('melakarta')} · ${res.parents.length}</h4><div class="chips">${res.parents.map(m=>chip(m)).join('')}</div>`;
+  h+=`</div>`;
+  if(res.near)h+=`<div class="card" style="margin-top:18px"><h3 class="label">${T('oneAway')} · ${res.near.length}</h3>${res.near.length?res.near.slice(0,30).map(o=>relRow(o.r,o.why)).join(''):'<p class="empty">Nothing one note away in the library.</p>'}</div>`;
+  return h;
+}
+const PGROUPS=[['S'],['R1','R2','R3'],['G1','G2','G3'],['M1','M2'],['P'],['D1','D2','D3'],['N1','N2','N3']];
+function paletteHTML(toks,base){const set=new Set(toks),bs=base?new Set(base):null;
+  return `<div class="pal">${PGROUPS.map(g=>`<div class="pg">${g.map(t=>{const on=set.has(t),added=bs&&on&&!bs.has(t);
+    return `<button class="pt ${on?(added?'add':'on'):''} ${t==='S'?'fixed':''}" data-tok="${t}" aria-pressed="${on}">${swL(t)}</button>`}).join('')}</div>`).join('')}</div>`}
+function barsHTML(toks,anyaBits){const on=maskOf(toks);
+  return `<div class="bars" id="bars">${Array.from({length:13},(_,i)=>{const bit=i%12,isOn=on&(1<<bit),an=anyaBits&(1<<bit);
+    const tok=i===12?'S':(isOn?nameIn(toks,bit):null);const nmL=i===12?swL('S')+'̇':(isOn?swL(tok):STRIP[bit].map(swL).join(' '));
+    const alt=isOn&&i!==12&&STRIP[bit].length>1?'= '+swL(STRIP[bit].find(x=>x!==tok)):'';
+    return `<button class="bar ${isOn?(an?'anya':'on'):''}" data-i="${i}" data-note="${i}" aria-label="Play ${nmL}"><i><span class="st">${i}</span></i><b>${nmL}</b><small>${alt}</small></button>`}).join('')}</div>`}
+// name a pitch-set with conventional swara labels
+function nameSet(mask){const bits=[];for(let b=0;b<12;b++)if(mask&(1<<b))bits.push(b);
+  const R={1:'R1',2:'R2',3:'R3'},G={2:'G1',3:'G2',4:'G3'},D={8:'D1',9:'D2',10:'D3'},N={9:'N1',10:'N2',11:'N3'};
+  const lo=bits.filter(b=>b>=1&&b<=4),mid=bits.filter(b=>b===5||b===6),hi=bits.filter(b=>b>=8);const out=['S'];
+  if(lo.length===1)out.push(lo[0]<=2?R[lo[0]]:G[lo[0]]);else if(lo.length>=2){out.push(R[lo[0]]||STRIP[lo[0]][0]);lo.slice(1).forEach(b=>out.push(G[b]||STRIP[b][0]))}
+  mid.forEach(b=>out.push(b===5?'M1':'M2'));if(bits.includes(7))out.push('P');
+  if(hi.length===1)out.push(hi[0]<=9?D[hi[0]]:N[hi[0]]);else if(hi.length>=2){out.push(D[hi[0]]||STRIP[hi[0]][0]);hi.slice(1).forEach(b=>out.push(N[b]||STRIP[b][0]))}
+  return out}
+
+// ---------- raga view ----------
+let current=null,wToks=[];
+function grahaCard(r){
+  const rows=[];
+  r.sw.forEach(t=>{const k=POS[t];if(k===0)return;const nmask=rotate(r.mask,k),toks=nameSet(nmask);const hits=byMask[nmask]||[];
+    const seq=[...toks,'S'];
+    rows.push(`<div class="gr"><button class="pb" data-playseq="${seq.join(',')}" aria-label="Play">▶</button><div><span class="from">${swL(t)} ${T('takeAs')} →</span> <span class="seq">${swSeq(seq,true)}</span>
+      <div class="res">${hits.length?(()=>{const hs=[...hits].sort((a,b)=>(a.kind==='mela'?-1:1)-(b.kind==='mela'?-1:1));return hs.slice(0,3).map(h=>`= <button class="nm" data-open="${h.id}">${nm(h)}</button> <small>(${tag(h)})</small>`).join(' ')+(hs.length>3?` <small>+${hs.length-3} more</small>`:'')})():T('noNamed')}</div></div></div>`)});
+  return `<div class="card"><h3 class="label">${T('graha')}</h3><p class="lead">Take each swara of the scale as the new Sa and read the same notes from there (murchana).</p>${rows.join('')}</div>`;
+}
+function kataCard(m){
+  const k=KATA[m.n-1],d1=m.n%10,d2=Math.floor(m.n/10);
+  const key=[[1,'ka ṭa pa ya'],[2,'kha ṭha pha ra'],[3,'ga ḍa ba la'],[4,'gha ḍha bha va'],[5,'ṅa ṇa ma śa'],[6,'ca ta ṣa'],[7,'cha tha sa'],[8,'ja da ha'],[9,'jha dha'],[0,'ña na']];
+  return `<div class="card"><h3 class="label">${T('kata')}</h3><p class="lead">The first two syllables of a melakarta's name encode its number. Each consonant stands for a digit; read the two digits right to left.</p>
+    <div class="kata"><div class="ktile"><div class="sy">${k[0]}</div><div class="cn">${k[1]}</div><div class="dg">${d1}</div></div><span class="kop">+</span>
+      <div class="ktile"><div class="sy">${k[2]}</div><div class="cn">${k[3]}</div><div class="dg">${d2}</div></div><span class="kop">→</span>
+      <div class="kres"><div class="dg">${String(d2)+String(d1)}</div><div class="cn">${T('readRL')}</div></div></div>
+    <div class="note"><b>${nm(m)}</b> → ${k[0]} = ${d1}, ${k[2]} = ${d2} → ${d1}${d2} reversed = <b>${m.n}</b>. Chakra = ⌈${m.n}/6⌉ = ${m.chakra+1}; position in chakra = ${m.n-m.chakra*6}.</div>
+    <details class="key"><summary>Katapayadi digit key</summary><div class="ktab-wrap"><table class="ktab">${key.map(([d,c])=>`<tr><th>${d}</th><td>${c}</td></tr>`).join('')}</table></div></details></div>`;
+}
+function renderRaga(){
+  const r=current,m=melaOf(r),isM=r.kind==='mela';
+  const anyaBits=isM?0:r.mask&~m.mask,anya=r.sw.filter(t=>anyaBits&(1<<POS[t]));
+  const aL=letters(r.aro),vL=letters(r.ava),th=THAAT[m.n],we=WEST[m.n];
+  let L=`<div class="crumbs"><button class="back" data-go="wheel">${T('back')}</button><span class="label">${isM?T('melakarta'):T('janyaRaga')}</span></div>
+    <div class="rtitle">${isM?`<sup>${r.n}</sup>`:''}<h1>${nm(r)}${LANG!=='en'?`<span class="en">${r.name}</span>`:''}</h1></div>
+    <div class="rsub">${isM?`${T('dikshitar')}: ${r.dname}${r.alias.filter(a=>a!==r.dname).length?' · '+r.alias.filter(a=>a!==r.dname).join(', '):''}`:`${T('janyaOf')} ${chip(m)}`}</div>
+    ${barsHTML(r.sw,anyaBits)}
+    <button class="hear" data-play>${T('hear')}</button>
+    <div class="prow"><button class="pb" data-aro aria-label="${T('aro')}">▶</button><span class="dir">↑</span><span class="sq">${swSeq(r.aro,true)}</span></div>
+    <div class="prow"><button class="pb" data-ava aria-label="${T('ava')}">▶</button><span class="dir">↓</span><span class="sq">${swSeq(r.ava,false)}</span></div>
+    <div class="card"><h3 class="label">${T('swarasthanas')}</h3><table class="sw">${r.sw.map(t=>`<tr><td>${swL(t)}</td><td>${fullL(t)}${anyaBits&(1<<POS[t])?' <span class="tag">anya</span>':''}</td><td>${POS[t]} st</td></tr>`).join('')}</table></div>
+    ${kataCard(m)}`;
+  let R=`<div class="card"><h3 class="label">${T('lakshanam')}</h3><div class="tags" style="margin-bottom:10px">`;
+  if(isM){const other=melas[r.n<=36?r.n+35:r.n-37];
+    const viv=[];if(r.rgI===0)viv.push('R1 G1');if(r.rgI===5)viv.push('R3 G3');if(r.dnI===0)viv.push('D1 N1');if(r.dnI===5)viv.push('D3 N3');
+    R+=`<span class="tag m">${T('sampurna')}</span><span class="tag m">${r.n<=36?T('shuddhaM'):T('pratiM')}</span>${r.vivadi?`<span class="tag">${T('vivadi')}</span>`:''}</div><dl class="facts">
+      <dt>${T('fChakra')}</dt><dd>${r.chakra+1} · ${ckN(r.chakra)} (${r.n-r.chakra*6} / 6)</dd>
+      <dt>${T('fStruct')}</dt><dd>${T('sampurna')}–${T('sampurna')}, krama</dd>
+      <dt>${T('fMadhya')}</dt><dd>${fullL(r.sw[3])} (${swL(r.sw[3])})</dd>
+      <dt>${T('fCounter')}</dt><dd>${chip(other)}</dd>
+      <dt>${T('vivadi')}</dt><dd>${r.vivadi?T('yes')+': '+viv.join(', '):T('no')}</dd>
+      <dt>${T('fJcount')}</dt><dd>${(janyaOf[r.n]||[]).length}</dd></dl>${NOTES[r.n]?`<div class="note"><b>Notes (to verify):</b> ${NOTES[r.n]}</div>`:''}</div>`;
+  }else{
+    const varA=m.sw.filter(t=>!aL.has(t[0])),varV=m.sw.filter(t=>!vL.has(t[0]));
+    R+=`<span class="tag m">${jatiL(aL.size)}–${jatiL(vL.size)}</span>${r.vakra?`<span class="tag">${T('vakra')}</span>`:''}${anya.length?`<span class="tag">${T('bhashanga')}</span>`:`<span class="tag g">${T('upanga')}</span>`}</div><dl class="facts">
+      <dt>${T('fParent')}</dt><dd>${chip(m)}</dd>
+      <dt>${T('fJati')}</dt><dd>${jatiL(aL.size)}–${jatiL(vL.size)} (${aL.size} ↑, ${vL.size} ↓)</dd>
+      <dt>${T('fVarA')}</dt><dd>${varA.length?varA.map(swL).join(' '):T('none')}</dd>
+      <dt>${T('fVarV')}</dt><dd>${varV.length?varV.map(swL).join(' '):T('none')}</dd>
+      <dt>${T('fVakra')}</dt><dd>${r.vakra?T('yes'):T('no')}</dd>
+      <dt>${T('fAnya')}</dt><dd>${anya.length?anya.map(swL).join(' '):T('none')}</dd></dl></div>`;
+  }
+  R+=grahaCard(r);
+  const same=ALL.filter(x=>x.mask===r.mask&&x.id!==r.id).map(x=>relRow(x,T('sameSw')));
+  const near=identify(r.mask,r.sw,r.id).near.map(o=>relRow(o.r,o.why));
+  const rels=[...same,...near];
+  R+=`<div class="card"><h3 class="label">${T('relatives')}</h3><p class="lead">Ragas sharing these swaras, or differing by one note.</p>
+    <div id="relList">${rels.slice(0,8).join('')||`<p class="empty">${T('none')}</p>`}</div>${rels.length>8?`<button class="more" id="relMore">Show all ${rels.length}</button>`:''}</div>`;
+  R+=`<div class="card"><h3 class="label">${T('change')}</h3><p class="lead">Swap or drop one swara to see which raga it becomes.</p><div id="wpal"></div><div id="wout"></div></div>`;
+  if(isM){const js=janyaOf[r.n]||[];
+    R+=`<div class="card"><h3 class="label">${T('janyas')} · ${js.length}</h3>${js.length?js.map(j=>relRow(j,`${swSeq(j.aro,true)}  ·  ${swSeq(j.ava,false)}`)).join(''):'<p class="empty">No janyas added for this mela yet.</p>'}</div>`}
+  R+=`<div class="card"><h3 class="label">${T('songs')}</h3><p class="lead">Starter list, to be verified.</p>${SONGS[r.name]?`<ul class="songs">${SONGS[r.name].map(([t,c])=>`<li><span>${t}</span><span>${c}</span></li>`).join('')}</ul>`:'<p class="empty">No songs added yet for this raga.</p>'}</div>`;
+  $('v-raga').innerHTML=`<div class="ragagrid"><div class="col">${L}</div><div class="col">${R}</div></div>`;
+  const more=$('relMore');if(more)more.onclick=()=>{$('relList').innerHTML=rels.join('');more.remove()};
+  renderWidget();
+}
+function renderWidget(){
+  const r=current;$('wpal').innerHTML=paletteHTML(wToks,r.sw);
+  const mask=maskOf(wToks),out=$('wout');if(mask===r.mask){out.innerHTML='';return}
+  const removed=r.sw.filter(t=>!wToks.includes(t)),added=wToks.filter(t=>!r.sw.includes(t));const res=identify(mask,wToks,null);
+  out.innerHTML=`<div class="diff">${removed.map(t=>`<span class="minus">${swL(t)}</span>`).join(' ')} ${added.length?'→ '+added.map(t=>`<span class="plus">${swL(t)}</span>`).join(' '):''} <span style="color:var(--muted)">=</span> ${uniqSorted(wToks).map(swL).join(' ')}</div>
+    <div class="chips" style="margin:12px 0"><button class="btn" data-wplay>${T('play')}</button><button class="btn ghost" data-wreset>Reset</button></div>
+    <h4 class="sub">${T('becomes')}</h4>${res.exact.length?res.exact.map(x=>relRow(x,swSeq(x.aro,true))).join(''):`<p class="empty">${T('noNamed')}</p>`}
+    ${res.parents.length?`<h4 class="sub">${T('melakarta')}</h4><div class="chips">${res.parents.map(p=>chip(p)).join('')}</div>`:''}`;
+}
+
+// ---------- finder ----------
+const fText=$('finderText');let fToks=['S','R2','G3','P','D2'];
+function parseSwaras(str){const bad=[],toks=['S'];
+  str.replace(/['’.,|\-]/g,' ').split(/\s+/).filter(Boolean).forEach(w=>{
+    const m=w.toLowerCase().match(/^(sa?|ri?|ga?|ma?|pa?|da?|dha|ni?)([1-3])?$/);if(!m){bad.push(w);return}
+    const L={s:'S',sa:'S',r:'R',ri:'R',g:'G',ga:'G',m:'M',ma:'M',p:'P',pa:'P',d:'D',da:'D',dha:'D',n:'N',ni:'N'}[m[1]];
+    if(L==='S'||L==='P'){toks.push(L);return}if(!m[2]||(L==='M'&&m[2]==='3')){bad.push(w);return}toks.push(L+m[2])});
+  return {toks:uniqSorted(toks),bad}}
+function renderFinder(fromText){
+  if(!fromText)fText.value=fToks.join(' ');$('finderPal').innerHTML=paletteHTML(fToks);
+  $('finderRes').innerHTML=pc(maskOf(fToks))<3?`<div class="card"><p class="empty">Add at least two swaras besides S.</p></div>`:resultsHTML(identify(maskOf(fToks),fToks,null));
+}
+fText.addEventListener('input',()=>{const {toks,bad}=parseSwaras(fText.value);fToks=toks;
+  $('finderErr').textContent=bad.length?`Not recognised: ${bad.join(', ')}. Use a number for R, G, M, D and N, like R2 or N3.`:'';renderFinder(true)});
+$('finderClear').onclick=()=>{fToks=['S'];$('finderErr').textContent='';renderFinder()};
+$('finderPlay').onclick=e=>{const a=[...fToks,'S'];playScale(a,[...a].reverse(),e.currentTarget)};
+$('finderPal').addEventListener('click',e=>{const b=e.target.closest('[data-tok]');if(!b||b.dataset.tok==='S')return;const t=b.dataset.tok;
+  fToks=fToks.includes(t)?fToks.filter(x=>x!==t):uniqSorted([...fToks,t]);renderFinder()});
+document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{fToks=parseSwaras(b.dataset.ex).toks;$('finderErr').textContent='';renderFinder()});
+
+// ---------- index ----------
+const idxQ=$('idxQ'),idxKind=$('idxKind');
+function matches(r,q){const hay=[r.name,r.dname||'',...(r.alias||[]),r.hk?dev(r.hk)+' '+tam(r.hk):'',r.kind==='mela'?String(r.n):String(r.mela)+' '+parentOf(r).name].join(' ').toLowerCase();
+  if(hay.includes(q))return true;const qt=q.toUpperCase().split(/\s+/);return qt.every(t=>t in POS&&r.sw.includes(t))}
+function renderIndex(){
+  const q=idxQ.value.trim().toLowerCase(),k=idxKind.value;
+  let list=ALL.filter(r=>k==='all'||(k==='songs'?!!SONGS[r.name]:r.kind===k));if(q)list=list.filter(r=>matches(r,q));
+  list.sort((a,b)=>a.name.localeCompare(b.name));
+  $('idxCount').textContent=`${list.length}`;
+  $('idxList').innerHTML=list.map(r=>relRow(r,swSeq(r.aro,true))).join('')||`<p class="empty">${T('none')}</p>`;
+}
+idxQ.addEventListener('input',renderIndex);idxKind.addEventListener('change',renderIndex);
+
+// ---------- search ----------
+const q=$('q'),drop=$('drop');let dropSel=0,dropItems=[];
+function renderDrop(){
+  const v=q.value.trim();if(!v){drop.hidden=true;return}
+  const lv=v.toLowerCase();dropItems=ALL.filter(r=>matches(r,lv)).sort((a,b)=>(b.name.toLowerCase().startsWith(lv))-(a.name.toLowerCase().startsWith(lv))||a.name.localeCompare(b.name)).slice(0,8).map(r=>({id:r.id,label:nm(r)+(LANG!=='en'?' · '+r.name:''),meta:tag(r)}));
+  const sw=parseSwaras(v);if(!sw.bad.length&&sw.toks.length>2)dropItems.unshift({finder:sw.toks,label:T('finder')+': '+fmt(sw.toks),meta:''});
+  dropSel=0;drop.hidden=!dropItems.length;
+  drop.innerHTML=dropItems.map((it,i)=>`<button data-di="${i}" class="${i===0?'act':''}"><span>${it.label}</span><small>${it.meta}</small></button>`).join('');
+}
+function pickDrop(i){const it=dropItems[i];if(!it)return;drop.hidden=true;q.value='';if(it.finder){fToks=it.finder;renderFinder();go('finder')}else go(it.id)}
+q.addEventListener('input',renderDrop);
+q.addEventListener('keydown',e=>{if(drop.hidden)return;if(e.key==='ArrowDown'){e.preventDefault();dropSel=Math.min(dropSel+1,dropItems.length-1)}
+  else if(e.key==='ArrowUp'){e.preventDefault();dropSel=Math.max(dropSel-1,0)}else if(e.key==='Enter'){e.preventDefault();pickDrop(dropSel);return}else if(e.key==='Escape'){drop.hidden=true;return}else return;
+  drop.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('act',i===dropSel))});
+drop.addEventListener('click',e=>{const b=e.target.closest('[data-di]');if(b)pickDrop(+b.dataset.di)});
+document.addEventListener('click',e=>{if(!e.target.closest('.search'))drop.hidden=true});
+
+// ---------- language ----------
+const langSel=$('langSel');langSel.value=LANG;
+function applyStatic(){document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=T(e.dataset.i18n));q.placeholder=T('searchPh');document.documentElement.lang=LANG==='ta'?'ta':LANG==='sa'?'sa':'en'}
+langSel.onchange=()=>{LANG=langSel.value;try{localStorage.setItem('rk-lang',LANG)}catch(e){}applyStatic();renderWheel();renderFinder();renderIndex();if(current&&!$('v-raga').hidden)renderRaga()};
+
+// ---------- routing ----------
+const VIEWS=['wheel','raga','finder','ragas'];
+function show(v){VIEWS.forEach(x=>$('v-'+x).hidden=x!==v);document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n.dataset.go===v))}
+function go(target){if(location.hash!=='#'+target)location.hash=target;else route()}
+function route(){
+  stopAll();const h=location.hash.slice(1);
+  if(byId[h]){current=byId[h];wToks=[...current.sw];renderRaga();show('raga');try{window.scrollTo(0,0)}catch(e){}
+    const m=melaOf(current);if(wheelSel!==m.n)spinTo(m.n,false);return}
+  if(h==='finder'){show('finder');return}if(h==='ragas'){show('ragas');return}show('wheel');
+}
+window.addEventListener('hashchange',route);
+
+// ---------- events ----------
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
+  const o=e.target.closest('[data-open]');if(o){go(o.dataset.open);return}
+  const ps=e.target.closest('[data-playseq]');if(ps){if(ps.classList.contains('playing')){stopAll();return}const a=ps.dataset.playseq.split(',');playScale(a,[...a].reverse(),ps);return}
+  const pi=e.target.closest('[data-playid]');if(pi){const r=byId[pi.dataset.playid];if(pi.classList.contains('playing')){stopAll();return}playScale(r.aro,r.ava,pi);return}
+  const pb=e.target.closest('[data-play]');if(pb){if(pb.classList.contains('playing')){stopAll();return}playScale(current.aro,current.ava,pb);return}
+  const ab=e.target.closest('[data-aro]');if(ab){playScale(current.aro,null,ab);return}
+  const vb=e.target.closest('[data-ava]');if(vb){playScale(null,current.ava,vb);return}
+  const nb=e.target.closest('[data-note]');if(nb){playOne(+nb.dataset.note);nb.classList.add('ring');setTimeout(()=>nb.classList.remove('ring'),350);return}
+  if(e.target.closest('[data-wreset]')){wToks=[...current.sw];renderWidget();return}
+  const wp=e.target.closest('[data-wplay]');if(wp){const a=[...uniqSorted(wToks),'S'];playScale(a,[...a].reverse(),wp);return}
+  const w=e.target.closest('#wpal [data-tok]');if(w){const t=w.dataset.tok;if(t==='S')return;
+    wToks=wToks.includes(t)?wToks.filter(x=>x!==t):uniqSorted([...wToks.filter(x=>x[0]!==t[0]),t]);renderWidget()}
+});
+
+applyStatic();renderWheel();renderFinder();renderIndex();route();
+})();
+</script>
+
+</body>
+</html>
